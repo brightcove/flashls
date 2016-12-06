@@ -271,6 +271,13 @@ package org.mangui.hls.demux {
 
 								pes.data.position -= total * 3;
 
+								var captionData: ByteArray = new ByteArray();
+								captionData.writeByte(byte);
+								captionData.writeByte(otherByte);
+								pes.data.readBytes(captionData, 2, 3*total);
+
+								pes.data.position -= total * 3;
+
 								// onCaptionInfo expects Base64 data...
 								var sei_data:String = Base64.encode(sei);
 
@@ -289,6 +296,7 @@ package org.mangui.hls.demux {
 								data.writeByte(0x11);
 								data.writeObject(cc_data);
 								tag.push(data, 0, data.length);
+								tag.captionData = captionData;
 								tag.build();
 								_tags.push(tag);
 							}
