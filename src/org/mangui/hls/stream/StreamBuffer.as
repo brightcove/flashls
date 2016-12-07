@@ -352,7 +352,7 @@ package org.mangui.hls.stream {
                         _metaTags.push(tagData);
                         if (tag.captionData) {
                           captions.push({
-                            pos: pos,
+                            pos: _liveSlidingMain ? _liveSlidingMain + pos : pos,
                             data: tag.captionData
                           });
                         }
