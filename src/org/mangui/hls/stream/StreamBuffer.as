@@ -326,6 +326,8 @@ package org.mangui.hls.stream {
                 _nextExpectedAbsoluteStartPosAltAudio = nextRelativeStartPos + sliding;
             }
 
+            var captions: Array = [];
+
             for each (var tag : FLVTag in tags) {
 //                CONFIG::LOGGING {
 //                    Log.debug2('append type/dts/pts:' + tag.typeString + '/' + tag.dts + '/' + tag.pts);
@@ -348,10 +350,20 @@ package org.mangui.hls.stream {
                         break;
                     case FLVTag.METADATA:
                         _metaTags.push(tagData);
+                        if (tag.captionData) {
+                          captions.push({
+                            pos: _liveSlidingMain ? _liveSlidingMain + pos : pos,
+                            data: tag.captionData
+                          });
+                        }
                         metaAppended = true;
                         break;
                     default:
                 }
+            }
+
+            if (captions.length) {
+              _hls.dispatchEvent(new HLSEvent(HLSEvent.CAPTION_DATA, captions));
             }
 
             if(headerAppended) {

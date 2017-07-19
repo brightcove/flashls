@@ -28,6 +28,7 @@ package org.mangui.hls.flv {
         public var keyframe : Boolean;
         /** Array with data pointers. **/
         protected var pointers : Vector.<TagData> = new Vector.<TagData>();
+        public var captionData: Object;
         /** PTS of this frame. **/
         public var pts : Number;
         /** DTS of this frame. **/
