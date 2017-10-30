@@ -29,7 +29,7 @@ package org.mangui.hls.controller {
             _hls = hls;
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);
-            
+
             // Prevents crash when reading hls.audioTracks.length before audio tracks are initialized
             _audioTracks = new Vector.<AudioTrack>();
         }
@@ -187,7 +187,7 @@ package org.mangui.hls.controller {
 
             // switch track id to default audio track, if found
             if (defaultFound == true && _audioTrackId == -1) {
-                audioTrack = 0;
+                _audioTrackId = 0;
             }
         }
 
