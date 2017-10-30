@@ -47,12 +47,14 @@ package org.mangui.hls.loader {
             _hls = hls;
             _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _stateHandler);
             _hls.addEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackSwitchHandler);
+            _hls.addEventListener(HLSEvent.AUDIO_TRACKS_LIST_CHANGE, _audioTrackSwitchHandler);
         };
 
         public function dispose() : void {
             _close();
             _hls.removeEventListener(HLSEvent.PLAYBACK_STATE, _stateHandler);
             _hls.removeEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackSwitchHandler);
+            _hls.removeEventListener(HLSEvent.AUDIO_TRACKS_LIST_CHANGE, _audioTrackSwitchHandler);
         }
 
         /** Loading failed; return errors. **/
