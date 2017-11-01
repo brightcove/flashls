@@ -187,7 +187,7 @@ package org.mangui.hls.controller {
 
             // switch track id to default audio track, if found
             if (defaultFound == true && _audioTrackId == -1) {
-                _audioTrackId = 0;
+                audioTrack = 0;
             }
         }
 
