@@ -4,7 +4,7 @@
   "description": "An Open-source HLS Flash plugin that allows you to play HLS streams.",
   "scripts": {
     "build": "node ./build/build.js",
-    "version": "npm run build && get add -A bin/"
+    "version": "npm run build && git add -A bin/"
   },
   "repository": {
     "type": "git",
