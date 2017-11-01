@@ -1,9 +1,10 @@
 {
   "name": "@brightcove/flashls",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "An Open-source HLS Flash plugin that allows you to play HLS streams.",
   "scripts": {
-    "build": "node ./build/build.js"
+    "build": "node ./build/build.js",
+    "version": "npm run build && git add -A bin/"
   },
   "repository": {
     "type": "git",
