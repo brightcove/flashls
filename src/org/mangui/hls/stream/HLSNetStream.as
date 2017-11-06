@@ -70,6 +70,8 @@ package org.mangui.hls.stream {
         private var _watchedDuration : Number;
         /** dropped frames counter **/
         private var _droppedFrames : Number;
+        /** decoded frames counter **/
+        private var _decodedFrames : Number;
         /** last NetStream.time, used to check if playback is over **/
         private var _lastNetStreamTime : Number;
 
@@ -78,7 +80,7 @@ package org.mangui.hls.stream {
             super(connection);
             super.bufferTime = 0.1;
             _hls = hls;
-            _skippedDuration = _watchedDuration = _droppedFrames = _lastNetStreamTime = 0;
+            _skippedDuration = _watchedDuration = _droppedFrames = _decodedFrames = _lastNetStreamTime = 0;
             _bufferThresholdController = new BufferThresholdController(hls);
             _streamBuffer = streamBuffer;
             _playbackState = HLSPlayStates.IDLE;
@@ -240,6 +242,7 @@ package org.mangui.hls.stream {
                 this is to avoid black screen during seek command */
                 _watchedDuration += super.time;
                 _droppedFrames += super.info.droppedFrames;
+                _decodedFrames += super.decodedFrames;
                 _skippedDuration = 0;
                 super.close();
 
@@ -347,6 +350,11 @@ package org.mangui.hls.stream {
         /* return nb of dropped Frames since session started */
         public function get droppedFrames() : Number {
             return super.info.droppedFrames + _droppedFrames;
+        }
+
+        /* return nb of total Frames since session started */
+        public function get totalFrames() : Number {
+            return super.decodedFrames + _decodedFrames + droppedFrames;
         }
 
         /** Return total watched time **/
@@ -467,7 +475,7 @@ package org.mangui.hls.stream {
                 Log.info("HLSNetStream:close");
             }
             super.close();
-            _watchedDuration = _skippedDuration = _lastNetStreamTime = _droppedFrames = 0;
+            _watchedDuration = _skippedDuration = _lastNetStreamTime = _droppedFrames = _decodedFrames = 0;
             _streamBuffer.stop();
             _timer.stop();
             _setPlaybackState(HLSPlayStates.IDLE);
