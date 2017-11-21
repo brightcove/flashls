@@ -622,13 +622,22 @@ package org.mangui.hls.demux {
                 } else if (frame.type == 6) {
 
                     var sei : ByteArray = new ByteArray();
+                    var captionData : ByteArray = new ByteArray();
                     pes.data.position = frame.start;
                     pes.data.readBytes(sei, 0, frame.length);
                     //unescape Emulation Prevention bytes
                     sei = Nalu.unescapeStream(sei);
-
                     // We already know it's 6, so skip first byte
                     sei.position = 1;
+
+                    // add a captionData tag that will be emitted to javascript for
+                    // parsing
+                    var captionTag:FLVTag = new FLVTag(FLVTag.CAPTIONDATA, pes.pts, pes.dts, false);
+                    sei.readBytes(captionData);
+                    captionTag.captionData = captionData;
+                    _tags.push(captionTag);
+
+
                     try {
                         // we need at least 12 bytes to retrieve Caption length
                         if(sei.bytesAvailable > 12) {

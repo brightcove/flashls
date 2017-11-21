@@ -333,6 +333,7 @@ package org.mangui.hls.stream {
 //                    Log.debug2('append type/dts/pts:' + tag.typeString + '/' + tag.dts + '/' + tag.pts);
 //                }
                 var pos : Number = startPosition + (tag.pts - min_pts) / 1000;
+                var posDTS : Number = startPosition + (tag.dts - min_pts) / 1000;
                 var tagData : FLVData = new FLVData(tag, pos, sliding, continuity, fragmentType, fragIdx, fragLevel, fragSN);
                 switch(tag.type) {
                     case FLVTag.DISCONTINUITY:
@@ -350,13 +351,14 @@ package org.mangui.hls.stream {
                         break;
                     case FLVTag.METADATA:
                         _metaTags.push(tagData);
-                        if (tag.captionData) {
-                          captions.push({
-                            pos: _liveSlidingMain ? _liveSlidingMain + pos : pos,
-                            data: tag.captionData
-                          });
-                        }
                         metaAppended = true;
+                        break;
+                    case FLVTag.CAPTIONDATA:
+                        captions.push({
+                            pts: _liveSlidingMain ? _liveSlidingMain + pos : pos,
+                            dts: _liveSlidingMain ? _liveSlidingMain + posDTS : posDTS,
+                            data: tag.captionData
+                        });
                         break;
                     default:
                 }
