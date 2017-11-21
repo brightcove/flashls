@@ -271,13 +271,6 @@ package org.mangui.hls.demux {
 
 								seiData.position -= total * 3;
 
-								var captionData: ByteArray = new ByteArray();
-								captionData.writeByte(byte);
-								captionData.writeByte(otherByte);
-								seiData.readBytes(captionData, 2, 3*total);
-
-								seiData.position -= total * 3;
-
 								// onCaptionInfo expects Base64 data...
 								var sei_data:String = Base64.encode(sei);
 
@@ -296,7 +289,6 @@ package org.mangui.hls.demux {
 								data.writeByte(0x11);
 								data.writeObject(cc_data);
 								tag.push(data, 0, data.length);
-								tag.captionData = captionData;
 								tag.build();
 								_tags.push(tag);
 							}
@@ -632,7 +624,7 @@ package org.mangui.hls.demux {
 
                     // add a captionData tag that will be emitted to javascript for
                     // parsing
-                    var captionTag:FLVTag = new FLVTag(FLVTag.CAPTIONDATA, pes.pts, pes.dts, false);
+                    var captionTag:FLVTag = new FLVTag(FLVTag.CAPTION_DATA, pes.pts, pes.dts, false);
                     sei.readBytes(captionData);
                     captionTag.captionData = captionData;
                     _tags.push(captionTag);

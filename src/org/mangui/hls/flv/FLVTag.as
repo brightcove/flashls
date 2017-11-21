@@ -21,7 +21,7 @@ package org.mangui.hls.flv {
         /** metadata Type ID. **/
         public static const METADATA : int = 6;
         /** captiondata Type ID. **/
-        public static const CAPTIONDATA : int = 42;
+        public static const CAPTION_DATA : int = 111;
         /* FLV TAG TYPE */
         private static const TAG_TYPE_AUDIO : int = 8;
         private static const TAG_TYPE_VIDEO : int = 9;

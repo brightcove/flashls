@@ -353,7 +353,7 @@ package org.mangui.hls.stream {
                         _metaTags.push(tagData);
                         metaAppended = true;
                         break;
-                    case FLVTag.CAPTIONDATA:
+                    case FLVTag.CAPTION_DATA:
                         captions.push({
                             pts: _liveSlidingMain ? _liveSlidingMain + pos : pos,
                             dts: _liveSlidingMain ? _liveSlidingMain + posDTS : posDTS,
