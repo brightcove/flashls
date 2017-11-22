@@ -355,7 +355,7 @@ package org.mangui.hls.stream {
                         break;
                     case FLVTag.CAPTION_DATA:
                         captions.push({
-                            pts: _liveSlidingMain ? _liveSlidingMain + pos : pos,
+                            pos: _liveSlidingMain ? _liveSlidingMain + pos : pos,
                             dts: _liveSlidingMain ? _liveSlidingMain + posDTS : posDTS,
                             data: tag.captionData
                         });
