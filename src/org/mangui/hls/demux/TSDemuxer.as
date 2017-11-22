@@ -271,13 +271,6 @@ package org.mangui.hls.demux {
 
 								seiData.position -= total * 3;
 
-								var captionData: ByteArray = new ByteArray();
-								captionData.writeByte(byte);
-								captionData.writeByte(otherByte);
-								seiData.readBytes(captionData, 2, 3*total);
-
-								seiData.position -= total * 3;
-
 								// onCaptionInfo expects Base64 data...
 								var sei_data:String = Base64.encode(sei);
 
@@ -296,7 +289,6 @@ package org.mangui.hls.demux {
 								data.writeByte(0x11);
 								data.writeObject(cc_data);
 								tag.push(data, 0, data.length);
-								tag.captionData = captionData;
 								tag.build();
 								_tags.push(tag);
 							}
@@ -622,13 +614,22 @@ package org.mangui.hls.demux {
                 } else if (frame.type == 6) {
 
                     var sei : ByteArray = new ByteArray();
+                    var captionData : ByteArray = new ByteArray();
                     pes.data.position = frame.start;
                     pes.data.readBytes(sei, 0, frame.length);
                     //unescape Emulation Prevention bytes
                     sei = Nalu.unescapeStream(sei);
-
                     // We already know it's 6, so skip first byte
                     sei.position = 1;
+
+                    // add a captionData tag that will be emitted to javascript for
+                    // parsing
+                    var captionTag:FLVTag = new FLVTag(FLVTag.CAPTION_DATA, pes.pts, pes.dts, false);
+                    sei.readBytes(captionData);
+                    captionTag.captionData = captionData;
+                    _tags.push(captionTag);
+
+
                     try {
                         // we need at least 12 bytes to retrieve Caption length
                         if(sei.bytesAvailable > 12) {
