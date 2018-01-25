@@ -125,6 +125,10 @@ package org.mangui.hls.loader {
 
         /** When audio track switch occurs, assess the need of loading audio level playlist **/
         private function _audioTrackSwitchHandler(event : HLSEvent) : void {
+            if (_hls.audioTracks.length == 0) {
+                return;
+            }
+
             _currentTrack = event.audioTrack;
             var audioTrack : AudioTrack = _hls.audioTracks[_currentTrack];
             if (audioTrack.source == AudioTrack.FROM_PLAYLIST) {
