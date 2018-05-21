@@ -19,7 +19,6 @@ package org.mangui.hls.stream {
     import org.mangui.hls.controller.LevelController;
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.event.HLSMediatime;
-    import org.mangui.hls.event.HLSPlayMetrics;
     import org.mangui.hls.flv.FLVTag;
     import org.mangui.hls.loader.AltAudioFragmentLoader;
     import org.mangui.hls.loader.FragmentLoader;
@@ -518,43 +517,6 @@ package org.mangui.hls.stream {
             CONFIG::LOGGING {
                 Log.debug("StreamBuffer flushed");
             }
-        }
-
-        private function partiallyFlushAudio() : void {
-
-            if (!_hls.stream.isReady) {
-                flushAudio();
-                return;
-            }
-
-            // Trim audio buffer and AAC HEADER tags after currently playing fragment
-
-            var i:uint;
-            var data:FLVData;
-            var metrics:HLSPlayMetrics = _hls.stream.playMetrics;
-            var frag:Fragment = _hls.levels[metrics.level].getFragmentfromSeqNum(metrics.seqnum);
-            var maxPts:Number = frag.data.pts_max;
-			var audioIdx:uint = 0;
-
-            for (i=0; i<_audioTags.length; i++) {
-                data = _audioTags[i];
-				if (data.tag.pts <= maxPts) {
-					audioIdx = i;
-				} else {
-                    _audioTags.splice(i--, 1);
-                }
-            }
-
-			function partiallyFilterAACHeader(item : FLVData, index : int, vector : Vector.<FLVData>) : Boolean {
-				return !(item.tag.type == FLVTag.AAC_HEADER && item.tag.pts > maxPts);
-			}
-
-			_audioIdx = audioIdx;
-			FLVData.refPTSAltAudio = maxPts;
-			_nextExpectedAbsoluteStartPosAltAudio = -1;
-			_liveSlidingAltAudio = 0;
-			var _filteredHeaderTags : Vector.<FLVData> = _headerTags.filter(partiallyFilterAACHeader);
-			_headerIdx -= (_headerTags.length - _filteredHeaderTags.length);
         }
 
         private function flushAudio() : void {
@@ -1460,7 +1422,6 @@ package org.mangui.hls.stream {
                         Log.debug("StreamBuffer : audio track changed, using PASSIVE method to switch to " + event.audioTrack);
                     }
                     if (isReady) {
-                        //partiallyFlushAudio();
                         break;
                     }
 

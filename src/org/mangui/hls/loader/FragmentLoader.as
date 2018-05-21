@@ -3,15 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.loader {
 
-    import flash.events.ErrorEvent;
-    import flash.events.Event;
-    import flash.events.HTTPStatusEvent;
-    import flash.events.IOErrorEvent;
-    import flash.events.ProgressEvent;
-    import flash.events.SecurityErrorEvent;
-    import flash.events.TimerEvent;
-    import flash.net.URLRequest;
-    import flash.net.URLStream;
+    import flash.events.*;
+    import flash.net.*;
     import flash.utils.ByteArray;
     import flash.utils.Timer;
     import flash.utils.getTimer;
@@ -35,6 +28,7 @@ package org.mangui.hls.loader {
     import org.mangui.hls.model.Level;
     import org.mangui.hls.stream.StreamBuffer;
     import org.mangui.hls.utils.AES;
+
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
         import org.mangui.hls.utils.Hex;
@@ -54,7 +48,7 @@ package org.mangui.hls.loader {
         /** next level (-1 if not defined yet) **/
         private var _levelNext : int = -1;
         /** Reference to the manifest levels. **/
-        private var _levels : Vector.<Level> = new Vector.<Level>(); // Initializing it here prevents crash after IOError loading playlist
+        private var _levels : Vector.<Level>;
         /** Util for loading the fragment. **/
         private var _fragstreamloader : URLStream;
         /** Util for loading the key. **/
@@ -119,7 +113,7 @@ package org.mangui.hls.loader {
             _loadingState = LOADING_STOPPED;
             _manifestJustLoaded = false;
             _keymap = new Object();
-		}
+        };
 
         public function dispose() : void {
             stop();
@@ -205,11 +199,7 @@ package org.mangui.hls.loader {
                                     _levelNext = Math.min(_levelNext, _fragCurrent.level-1);
                                   // switch back to IDLE state to request new fragment at lowest level
                                   _loadingState = LOADING_IDLE;
-                                } else {
-									CONFIG::LOGGING {
-										Log.warn(this+" _checkLoading: Call to _streamBuffer.flushLastFragment failed!");
-									}
-								}
+                                }
                             }
                         }
                     }
@@ -245,7 +235,7 @@ package org.mangui.hls.loader {
 
                         // check if we received playlist for choosen level. if live playlist, ensure that new playlist has been refreshed
                         // to avoid loading outdated fragments
-                        if (_levels.length < level+1 || (_levels[level].fragments.length == 0) || (_hls.type == HLSTypes.LIVE && _levelLastLoaded != level)) {
+                        if ((_levels[level].fragments.length == 0) || (_hls.type == HLSTypes.LIVE && _levelLastLoaded != level)) {
                             // playlist not yet received
                             CONFIG::LOGGING {
                                 Log.debug("_checkLoading : playlist not received for level:" + level);
@@ -387,7 +377,7 @@ package org.mangui.hls.loader {
                 // now load fragment
                 try {
                     CONFIG::LOGGING {
-                        Log.debug("loading fragment: " + _fragCurrent.url);
+                        Log.debug("loading fragment:" + _fragCurrent.url);
                     }
                     _fragCurrent.data.bytes = null;
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOADING, _fragCurrent.url));
@@ -439,12 +429,7 @@ package org.mangui.hls.loader {
                 Log.warn(hlsError.msg);
             }
             // flush any tags that might have been injected for this fragment
-			var lastFragmentFlushed : Boolean = _streamBuffer.flushLastFragment(_fragCurrent.level,_fragCurrent.seqnum);
-			CONFIG::LOGGING {
-	            if (!lastFragmentFlushed) {
-					Log.warn(this+" _fragHandleParsingError: Call to _streamBuffer.flushLastFragment failed!");
-				}
-			}
+            _streamBuffer.flushLastFragment(_fragCurrent.level,_fragCurrent.seqnum);
             _hls.dispatchEvent(new HLSEvent(HLSEvent.WARNING, hlsError));
             // if we have redundant streams left for that level, switch to it
             if(level.redundantStreamId < level.redundantStreamsNb) {
@@ -467,25 +452,25 @@ package org.mangui.hls.loader {
                 }
                 // switch back to IDLE state to request new fragment at lowest level
                 _loadingState = LOADING_IDLE;
-            } else if ((HLSSettings.fragmentLoadSkipAfterMaxRetry == true && _fragSkipCount < HLSSettings.maxSkippedFragments) || HLSSettings.maxSkippedFragments < 0) {
-				CONFIG::LOGGING {
-					Log.warn("error parsing fragment, skip it and load next one");
-				}
-					var tags : Vector.<FLVTag> = new Vector.<FLVTag>();
-				tags.push(_fragCurrent.getSkippedTag());
-				// send skipped FLV tag to StreamBuffer
-				_streamBuffer.appendTags(HLSLoaderTypes.FRAGMENT_MAIN,_fragCurrent.level,_fragCurrent.seqnum ,tags,_fragCurrent.data.pts_start_computed, _fragCurrent.data.pts_start_computed + 1000*_fragCurrent.duration, _fragCurrent.continuity, _fragCurrent.start_time);
-				_fragRetryCount = 0;
-				_fragRetryTimeout = 1000;
-				_fragPrevious = _fragCurrent;
-				_fragSkipping = true;
-				_fragSkipCount++;
-				CONFIG::LOGGING {
-					Log.debug("fragments skipped / max: " + _fragSkipCount + "/" + HLSSettings.maxSkippedFragments );
-				}
-					// set fragment first loaded to be true to ensure that we can skip first fragment as well
-					_fragmentFirstLoaded = true;
-				_loadingState = LOADING_IDLE;
+            } else if(HLSSettings.fragmentLoadSkipAfterMaxRetry == true && _fragSkipCount < HLSSettings.maxSkippedFragments  || HLSSettings.maxSkippedFragments < 0) {
+                CONFIG::LOGGING {
+                    Log.warn("error parsing fragment, skip it and load next one");
+                }
+                var tags : Vector.<FLVTag> = tags = new Vector.<FLVTag>();
+                tags.push(_fragCurrent.getSkippedTag());
+                // send skipped FLV tag to StreamBuffer
+                _streamBuffer.appendTags(HLSLoaderTypes.FRAGMENT_MAIN,_fragCurrent.level,_fragCurrent.seqnum ,tags,_fragCurrent.data.pts_start_computed, _fragCurrent.data.pts_start_computed + 1000*_fragCurrent.duration, _fragCurrent.continuity, _fragCurrent.start_time);
+                _fragRetryCount = 0;
+                _fragRetryTimeout = 1000;
+                _fragPrevious = _fragCurrent;
+                _fragSkipping = true;
+                _fragSkipCount++;
+                CONFIG::LOGGING {
+                    Log.debug("fragments skipped / max: " + _fragSkipCount + "/" + HLSSettings.maxSkippedFragments );
+                }
+                // set fragment first loaded to be true to ensure that we can skip first fragment as well
+                _fragmentFirstLoaded = true;
+                _loadingState = LOADING_IDLE;
             } else {
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
             }
@@ -783,7 +768,7 @@ package org.mangui.hls.loader {
 
         private function _loadfirstfragment(position : Number, level : int) : int {
             CONFIG::LOGGING {
-                Log.debug(this+" loadfirstfragment(" + position + ")");
+                Log.debug("loadfirstfragment(" + position + ")");
             }
             var frag : Fragment = _levels[level].getFragmentBeforePosition(position);
             _hasDiscontinuity = true;
@@ -1005,7 +990,7 @@ package org.mangui.hls.loader {
 
         /** triggered when demux has retrieved some tags from fragment **/
         private function _fragParsingProgressHandler(tags : Vector.<FLVTag>) : void {
-			CONFIG::LOGGING {
+            CONFIG::LOGGING {
                 Log.debug2(tags.length + " tags extracted");
             }
             var fragData : FragmentData = _fragCurrent.data;
@@ -1029,9 +1014,7 @@ package org.mangui.hls.loader {
                  * if audio not expected, PTS analysis is done on video
                  * the check below ensures that we can compute min/max PTS
                  */
-                if ((_demux.audioExpected && fragData.audio_found)
-					|| (!_demux.audioExpected && fragData.video_found)
-					|| (_demux.videoExpected && fragData.video_found)) {
+                if ((_demux.audioExpected && fragData.audio_found) || (!_demux.audioExpected && fragData.video_found)) {
                     if (_ptsAnalyzing == true) {
                         var levelObj : Level = _levels[_hls.loadLevel];
                         _ptsAnalyzing = false;
@@ -1046,7 +1029,7 @@ package org.mangui.hls.loader {
                          */
                         var next_pts:Number;
                         var next_seqnum:Number;
-
+                        
                         // Resolves intermittent issue that causes the player to crash due to missing previous fragment data while seeking
                         if (_fragPrevious && _fragPrevious.data) {
                             next_pts = _fragPrevious.data.pts_start_computed + 1000*_fragPrevious.duration;
@@ -1056,7 +1039,7 @@ package org.mangui.hls.loader {
                                 Log.debug("Previous fragment data not found while analyzing PTS!");
                             }
                         }
-
+                        
                         CONFIG::LOGGING {
                             Log.debug("analyzed PTS : getSeqNumNearestPTS(level,pts,cc:" + _hls.loadLevel + "," + next_pts + "," + _fragCurrent.continuity + ")=" + next_seqnum);
                         }
@@ -1150,7 +1133,6 @@ package org.mangui.hls.loader {
                         _loadingState = LOADING_IDLE;
                         _switchLevel = true;
                         _demux = null;
-//						_hls.stream.seek(_hls.position); // NEIL: This resolves the blank screen issue, but means we start at level 0 :'-(
                         _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, fragLevelIdx));
                         // speed up loading of new playlist
                         _timer.start();

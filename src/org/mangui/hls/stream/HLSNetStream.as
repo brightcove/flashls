@@ -74,12 +74,12 @@ package org.mangui.hls.stream {
         private var _watchedDuration : Number;
         /** dropped frames counter **/
         private var _droppedFrames : Number;
+        /** decoded frames counter **/
+        private var _decodedFrames: Number;
         /** last NetStream.time, used to check if playback is over **/
         private var _lastNetStreamTime : Number;
 
         // NEIL
-        /** Play metrics for the current fragment */
-        private var _playMetrics : HLSPlayMetrics;
         /** Is this the first time the stream has been resumed after buffering? */
         private var _isReady : Boolean;
 
@@ -90,8 +90,8 @@ package org.mangui.hls.stream {
             super(connection);
             super.bufferTime = 3.0;
             _hls = hls;
-			_hls.addEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackSwitch);
-            _skippedDuration = _watchedDuration = _droppedFrames = _lastNetStreamTime = 0;
+            _hls.addEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackSwitch);
+            _skippedDuration = _watchedDuration = _droppedFrames = _decodedFrames = _lastNetStreamTime = 0;
             _bufferThresholdController = new BufferThresholdController(hls);
             _streamBuffer = streamBuffer;
             _playbackState = HLSPlayStates.IDLE;
@@ -118,36 +118,30 @@ package org.mangui.hls.stream {
 
         protected function onHLSFragmentChange(level : int, seqnum : int, cc : int, duration : Number, audio_only : Boolean, program_date : Number, width : int, height : int, auto_level : Boolean, pts:Number, customTagNb : int, id3TagNb : int, ... tags) : void {
             CONFIG::LOGGING {
-                Log.debug(this+" playing fragment(level/sn/cc):" + level + "/" + seqnum + "/" + cc);
+                Log.debug("playing fragment(level/sn/cc):" + level + "/" + seqnum + "/" + cc);
             }
             var customTagArray : Array = new Array();
             var id3TagArray : Array = new Array();
             for (var i : uint = 0; i < customTagNb; i++) {
                 customTagArray.push(tags[i]);
                 CONFIG::LOGGING {
-                    Log.debug(this+" custom tag:" + tags[i]);
+                    Log.debug("custom tag:" + tags[i]);
                 }
             }
             for (i = customTagNb; i < tags.length; i+=4) {
                 var id3Tag : ID3Tag = new ID3Tag(tags[i],tags[i+1],tags[i+2],tags[i+3]);
                 id3TagArray.push(id3Tag);
                 CONFIG::LOGGING {
-                    Log.debug(this+" id3 tag:" + id3Tag);
+                    Log.debug("id3 tag:" + id3Tag);
                 }
             }
-			//var playMetrics:HLSPlayMetrics = new HLSPlayMetrics(level, seqnum, cc, duration, audio_only, program_date, width, height, auto_level, pts, customTagArray, id3TagArray);
 			if (!audio_only) {
 				_currentLevel = level;
-				//_playMetrics = playMetrics;
 			}
-			_hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_PLAYING, playMetrics));
+			_hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_PLAYING, new HLSPlayMetrics(level, seqnum, cc, duration, audio_only, program_date, width, height, auto_level, customTagArray,id3TagArray)));
         }
 
-        public function get playMetrics():HLSPlayMetrics {
-            return _playMetrics;
-        }
-
-        protected function onHLSFragmentSkipped(level : int, seqnum : int,duration : Number) : void {
+        public function onHLSFragmentSkipped(level : int, seqnum : int,duration : Number) : void {
             CONFIG::LOGGING {
                 Log.warn("skipped fragment(level/sn/duration):" + level + "/" + seqnum + "/" + duration);
             }
@@ -156,12 +150,12 @@ package org.mangui.hls.stream {
         }
 
         // function is called by SCRIPT in FLV
-        protected function onID3Data(data : ByteArray) : void {
+        public function onID3Data(data : ByteArray) : void {
             // we dump the content as base64 to get it to the Javascript in the browser.
             // The client can use window.atob() to decode the ID3Data.
             var dump : String = Base64.encode(data);
             CONFIG::LOGGING {
-                Log.debug(this+" id3:" + dump);
+                Log.debug("id3:" + dump);
             }
             _hls.dispatchEvent(new HLSEvent(HLSEvent.ID3_UPDATED, dump));
         }
@@ -175,10 +169,7 @@ package org.mangui.hls.stream {
                 liveLoadingStalled : Boolean = _streamBuffer.liveLoadingStalled;
 
             CONFIG::LOGGING {
-            Log.debug(this+" "+_hls.playbackState+" --> NetStream + StreamBuffer (audio, video) = total --> "
-                + super.bufferLength.toFixed(1)
-                + " + " + _streamBuffer.bufferLength.toFixed(1) + " ("+_streamBuffer.audioBufferLength.toFixed(1)+", "+_streamBuffer.videoBufferLength.toFixed(1)+")"
-                + " = " + this.bufferLength.toFixed(1));
+                Log.info("netstream/total:" + super.bufferLength + "/" + this.bufferLength);
             }
 
             if (_seekState != HLSSeekStates.SEEKING) {
@@ -205,7 +196,7 @@ package org.mangui.hls.stream {
                             // stop timer, report event and switch to IDLE mode.
                             _timer.stop();
                             CONFIG::LOGGING {
-                                Log.debug(this+" reached end of VOD playlist, notify playback complete");
+                                Log.debug("reached end of VOD playlist, notify playback complete");
                             }
                             _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYBACK_COMPLETE));
                             _setPlaybackState(HLSPlayStates.IDLE);
@@ -229,7 +220,6 @@ package org.mangui.hls.stream {
                     }
                     _lastNetStreamTime = super.time;
                 }
-
                 // if buffer len is below lowBufferLength, get into buffering state
                 if (!reachedEnd && !liveLoadingStalled && buffer < _bufferThresholdController.lowBufferLength) {
                     super.pause();
@@ -249,7 +239,7 @@ package org.mangui.hls.stream {
 
                     if (_playbackState == HLSPlayStates.PLAYING_BUFFERING) {
                         CONFIG::LOGGING {
-                            Log.debug(this+" resume playback, minBufferLength/buffer:"+minBufferLength.toFixed(2) + "/" + buffer.toFixed(2));
+                            Log.debug("resume playback, minBufferLength/bufferLength:"+minBufferLength.toFixed(2) + "/" + buffer.toFixed(2));
                         }
                         super.resume(); // NEIL: This resume is where we see blank/frozen video
                         _setPlaybackState(HLSPlayStates.PLAYING);
@@ -289,6 +279,7 @@ package org.mangui.hls.stream {
                 this is to avoid black screen during seek command */
                 _watchedDuration += super.time;
                 _droppedFrames += super.info.droppedFrames;
+                _decodedFrames += super.decodedFrames;
                 _skippedDuration = 0;
 
                 // useHardwareDecoder was added in FP11.1, but this allows us to include the option in all builds
@@ -394,6 +385,11 @@ package org.mangui.hls.stream {
             return super.info.droppedFrames + _droppedFrames;
         }
 
+        /* return nb of total Frames since session started */
+        public function get totalFrames() : Number {
+            return super.decodedFrames + _decodedFrames + droppedFrames;
+        }
+
         /** Return total watched time **/
         public function get watched() : Number {
             return super.time + _watchedDuration;
@@ -494,7 +490,7 @@ package org.mangui.hls.stream {
             CONFIG::LOGGING {
                 Log.info("HLSNetStream:seek(" + position + ")");
             }
-			_streamBuffer.seek(position, forceReload);
+            _streamBuffer.seek(position, forceReload);
             _setSeekState(HLSSeekStates.SEEKING);
 			switch(_playbackState) {
 				case HLSPlayStates.IDLE:
@@ -530,7 +526,7 @@ package org.mangui.hls.stream {
                 Log.info("HLSNetStream:close");
             }
             super.close();
-            _watchedDuration = _skippedDuration = _lastNetStreamTime = _droppedFrames = 0;
+            _watchedDuration = _skippedDuration = _lastNetStreamTime = _droppedFrames = _decodedFrames = 0;
             _streamBuffer.stop();
             _timer.stop();
             _setPlaybackState(HLSPlayStates.IDLE);
@@ -540,14 +536,5 @@ package org.mangui.hls.stream {
 		public function get bufferThresholdController() : BufferThresholdController {
 			return _bufferThresholdController;
 		}
-
-		/**
-		 * Immediately dispatches an event via the client object to mimic
-		 * an FLVTag event from the stream
-		 */
-		//public function dispatchClientEvent(type:String, ...args):void {
-		//	$client[type].apply($client, args);
-		//}
-
 	}
 }
