@@ -395,22 +395,6 @@ package org.mangui.hls.stream {
             return super.time + _watchedDuration;
         }
 
-		/** Loads the stream and obeys autoPlay when it's ready to start */
-		public function load(...args) : void {
-			play.apply(this, args);
-			if (!autoPlay) {
-				_setPlaybackState(HLSPlayStates.PAUSED_BUFFERING);
-			}
-		}
-
-		/** Loads the stream and obeys autoPlay when it's ready to start */
-		public function load2(param : NetStreamPlayOptions) : void {
-			play2(param);
-			if (!autoPlay) {
-				_setPlaybackState(HLSPlayStates.PAUSED_BUFFERING);
-			}
-		}
-
         override public function play(...args) : void {
             var _playStart : Number;
             if (args.length >= 2) {
