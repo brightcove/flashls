@@ -15,7 +15,7 @@ package org.mangui.hls.loader {
     import flash.utils.ByteArray;
     import flash.utils.Timer;
     import flash.utils.getTimer;
-    
+
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
     import org.mangui.hls.constant.HLSLoaderTypes;
@@ -54,7 +54,7 @@ package org.mangui.hls.loader {
         /** next level (-1 if not defined yet) **/
         private var _levelNext : int = -1;
         /** Reference to the manifest levels. **/
-        private var _levels : Vector.<Level> = new Vector.<Level>(); // Initializing it here prevents crash after IOError loading playlist 
+        private var _levels : Vector.<Level> = new Vector.<Level>(); // Initializing it here prevents crash after IOError loading playlist
         /** Util for loading the fragment. **/
         private var _fragstreamloader : URLStream;
         /** Util for loading the key. **/
@@ -199,7 +199,7 @@ package org.mangui.hls.loader {
                                     _metrics.duration = 1000*fragDuration;
                                     _metrics.loading_end_time = _metrics.parsing_end_time = _metrics.loading_request_time + 1000*expected/loadRate;
                                     _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOAD_EMERGENCY_ABORTED, _metrics));
-                                    _levelNext = _levelController.getNextLevel(_fragCurrent.level, bufferLen);
+                                    _levelNext = _levelController.getnextlevel(_fragCurrent.level, bufferLen);
                                     // ensure that we really switch down to avoid looping here.
                                     // _fragCurrent.level is gt 0 in that case, no need to Math.max(0,_levelNext)
                                     _levelNext = Math.min(_levelNext, _fragCurrent.level-1);
@@ -228,7 +228,7 @@ package org.mangui.hls.loader {
                             } else {
                                 if(_hls.stream.bufferLength) {
                                     // if buffer not empty, select level from heuristics
-                                    level = _levelController.getNextLevel(_hls.loadLevel, _hls.stream.bufferLength);
+                                    level = _levelController.getnextlevel(_hls.loadLevel, _hls.stream.bufferLength);
                                 } else {
                                     // if buffer empty, retrieve seek level
                                     level = _hls.seekLevel;
@@ -266,7 +266,7 @@ package org.mangui.hls.loader {
                             level = _levelNext;
                         } else if (_hls.autoLevel && _levels.length > 1 ) {
                             // select level from heuristics (current level / last fragment duration / buffer length)
-                            level = _levelController.getNextLevel(_hls.loadLevel, _hls.stream.bufferLength);
+                            level = _levelController.getnextlevel(_hls.loadLevel, _hls.stream.bufferLength);
                         } else if (_hls.autoLevel && _levels.length == 1 ) {
                             level = 0;
                         } else {
@@ -351,7 +351,7 @@ package org.mangui.hls.loader {
             _levelNext = -1;
             _timer.start();
         }
-		
+
         public function seekFromLastFrag(lastFrag : Fragment) : void {
             CONFIG::LOGGING {
                 Log.info("FragmentLoader:seekFromLastFrag(level:" + lastFrag.level + ",SN:" + lastFrag.seqnum + ",PTS:" + lastFrag.data.pts_start +")");
@@ -689,7 +689,7 @@ package org.mangui.hls.loader {
                 }
                 fragData.decryptAES = null;
             }
-			
+
             // deal with byte range here
             if (_fragCurrent.byterange_start_offset != -1) {
                 CONFIG::LOGGING {
@@ -1029,8 +1029,8 @@ package org.mangui.hls.loader {
                  * if audio not expected, PTS analysis is done on video
                  * the check below ensures that we can compute min/max PTS
                  */
-                if ((_demux.audioExpected && fragData.audio_found) 
-					|| (!_demux.audioExpected && fragData.video_found) 
+                if ((_demux.audioExpected && fragData.audio_found)
+					|| (!_demux.audioExpected && fragData.video_found)
 					|| (_demux.videoExpected && fragData.video_found)) {
                     if (_ptsAnalyzing == true) {
                         var levelObj : Level = _levels[_hls.loadLevel];
@@ -1046,7 +1046,7 @@ package org.mangui.hls.loader {
                          */
                         var next_pts:Number;
                         var next_seqnum:Number;
-                        
+
                         // Resolves intermittent issue that causes the player to crash due to missing previous fragment data while seeking
                         if (_fragPrevious && _fragPrevious.data) {
                             next_pts = _fragPrevious.data.pts_start_computed + 1000*_fragPrevious.duration;
@@ -1056,7 +1056,7 @@ package org.mangui.hls.loader {
                                 Log.debug("Previous fragment data not found while analyzing PTS!");
                             }
                         }
-                        
+
                         CONFIG::LOGGING {
                             Log.debug("analyzed PTS : getSeqNumNearestPTS(level,pts,cc:" + _hls.loadLevel + "," + next_pts + "," + _fragCurrent.continuity + ")=" + next_seqnum);
                         }
