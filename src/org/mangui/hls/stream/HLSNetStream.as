@@ -29,8 +29,7 @@ package org.mangui.hls.stream {
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
     }
-    /**
-     * Class that overrides standard flash.net.NetStream class, keeps the buffer filled, handles seek and play state
+    /** Class that overrides standard flash.net.NetStream class, keeps the buffer filled, handles seek and play state
      *
      * play state transition :
      *
@@ -83,12 +82,10 @@ package org.mangui.hls.stream {
         /** Is this the first time the stream has been resumed after buffering? */
         private var _isReady : Boolean;
 
-        public var autoPlay:Boolean = true;
-
         /** Create the buffer. **/
         public function HLSNetStream(connection : NetConnection, hls : HLS, streamBuffer : StreamBuffer) : void {
             super(connection);
-            super.bufferTime = 3.0;
+            super.bufferTime = 0.1;
             _hls = hls;
             _hls.addEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackSwitch);
             _skippedDuration = _watchedDuration = _droppedFrames = _decodedFrames = _lastNetStreamTime = 0;
@@ -105,10 +102,6 @@ package org.mangui.hls.stream {
             super.client = _client;
         }
 
-		public function get altAudioTrackSwitching():Boolean {
-			return _streamBuffer.altAudioTrackSwitching;
-		}
-
 		protected function _audioTrackSwitch(event:HLSEvent):void
 		{
 			if (_isReady && HLSSettings.altAudioSwitchMode == HLSAltAudioSwitchMode.ACTIVE) {
@@ -116,7 +109,7 @@ package org.mangui.hls.stream {
 			}
 		}
 
-        protected function onHLSFragmentChange(level : int, seqnum : int, cc : int, duration : Number, audio_only : Boolean, program_date : Number, width : int, height : int, auto_level : Boolean, pts:Number, customTagNb : int, id3TagNb : int, ... tags) : void {
+        protected function onHLSFragmentChange(level : int, seqnum : int, cc : int, duration : Number, audio_only : Boolean, program_date : Number, width : int, height : int, auto_level : Boolean, customTagNb : int, id3TagNb : int, ... tags) : void {
             CONFIG::LOGGING {
                 Log.debug("playing fragment(level/sn/cc):" + level + "/" + seqnum + "/" + cc);
             }
@@ -135,10 +128,10 @@ package org.mangui.hls.stream {
                     Log.debug("id3 tag:" + id3Tag);
                 }
             }
-			if (!audio_only) {
-				_currentLevel = level;
-			}
-			_hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_PLAYING, new HLSPlayMetrics(level, seqnum, cc, duration, audio_only, program_date, width, height, auto_level, customTagArray,id3TagArray)));
+            if (!audio_only) {
+                _currentLevel = level;
+            }
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_PLAYING, new HLSPlayMetrics(level, seqnum, cc, duration, audio_only, program_date, width, height, auto_level, customTagArray,id3TagArray)));
         }
 
         public function onHLSFragmentSkipped(level : int, seqnum : int,duration : Number) : void {
@@ -162,15 +155,10 @@ package org.mangui.hls.stream {
 
         /** timer function, check/update NetStream state, and append tags if needed **/
         private function _checkBuffer(e : Event) : void {
-
             var buffer : Number = this.bufferLength,
                 minBufferLength : Number = _bufferThresholdController.minBufferLength,
                 reachedEnd : Boolean = _streamBuffer.reachedEnd,
                 liveLoadingStalled : Boolean = _streamBuffer.liveLoadingStalled;
-
-            CONFIG::LOGGING {
-                Log.info("netstream/total:" + super.bufferLength + "/" + this.bufferLength);
-            }
 
             if (_seekState != HLSSeekStates.SEEKING) {
                 if (_playbackState == HLSPlayStates.PLAYING) {
@@ -251,10 +239,10 @@ package org.mangui.hls.stream {
             }
         }
 
-		/** Is the stream ready for playback? */
-		public function get isReady() : Boolean {
-			return _isReady;
-		}
+        /** Is the stream ready for playback? */
+        public function get isReady() : Boolean {
+            return _isReady;
+        }
 
         /** Return the current playback state. **/
         public function get playbackState() : String {
@@ -283,8 +271,12 @@ package org.mangui.hls.stream {
                 _skippedDuration = 0;
 
                 // useHardwareDecoder was added in FP11.1, but this allows us to include the option in all builds
-                try { super['useHardwareDecoder'] = HLSSettings.useHardwareVideoDecoder; }
-				catch(e : Error) {}
+                try {
+                    super['useHardwareDecoder'] = HLSSettings.useHardwareVideoDecoder;
+                }
+				catch(e : Error) {
+                    // Ignore errors, we're running in FP < 11.1
+                }
 
                 super.close();
                 super.play(null);
@@ -348,6 +340,7 @@ package org.mangui.hls.stream {
                 }
             }
             if (_seekState == HLSSeekStates.SEEKING) {
+                // dispatch event to mimic NetStream behaviour
                 dispatchEvent(new NetStatusEvent(NetStatusEvent.NET_STATUS, false, false, {code:"NetStream.Seek.Notify", level:"status"}));
                 _setSeekState(HLSSeekStates.SEEKED);
             }
@@ -465,12 +458,12 @@ package org.mangui.hls.stream {
             }
         }
 
-        /** Start playing data in the buffer. **/
         override public function seek(position : Number) : void {
-			seek2(position);
+			seekWithForceReloadOption(position);
 		}
 
-		public function seek2(position : Number, forceReload : Boolean = false) : void {
+        /** Start playing data in the buffer. **/
+		public function seekWithForceReloadOption(position : Number, forceReload : Boolean = false) : void {
             CONFIG::LOGGING {
                 Log.info("HLSNetStream:seek(" + position + ")");
             }

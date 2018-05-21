@@ -1405,7 +1405,7 @@ package org.mangui.hls.stream {
 					if (isReady) {
 						// Current implementation is effectively a hard reset of the current audio stream...
 						function audioLevelLoadedHandler(e:HLSEvent):void {
-							stream.seek2(-2, true);
+							stream.seekWithForceReloadOption(-2, true);
 							_hls.removeEventListener(HLSEvent.AUDIO_LEVEL_LOADED, audioLevelLoadedHandler);
 						}
 						flushBuffer();
