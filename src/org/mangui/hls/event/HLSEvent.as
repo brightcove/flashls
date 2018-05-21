@@ -1,10 +1,10 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. **/
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.event {
-    import flash.events.Event;
-
     import org.mangui.hls.model.Level;
+
+    import flash.events.Event;
 
     /** Event fired when an error prevents playback. **/
     public class HLSEvent extends Event {
@@ -12,9 +12,9 @@ package org.mangui.hls.event {
         public static const MANIFEST_LOADING : String = "hlsEventManifestLoading";
         /** Identifier for a manifest parsed event,
          * triggered after main manifest has been retrieved and parsed.
-         * hls playlist may not be playable yet, in case of adaptive streaming, start level playlist is not downloaded yet at that stage **/
+         * hls playlist may not be playable yet, in case of adaptive streaming, start level playlist is not downloaded yet at that stage */
         public static const MANIFEST_PARSED : String = "hlsEventManifestParsed";
-        /** Identifier for a manifest loaded event, when this event is received, main manifest and start level has been retrieved **/
+        /** Identifier for a manifest loaded event, when this event is received, main manifest and start level has been retrieved */
         public static const MANIFEST_LOADED : String = "hlsEventManifestLoaded";
         /** Identifier for a level loading event  **/
         public static const LEVEL_LOADING : String = "hlsEventLevelLoading";
@@ -30,7 +30,7 @@ package org.mangui.hls.event {
         public static const FRAGMENT_LOADING : String = "hlsEventFragmentLoading";
         /** Identifier for a fragment loaded event. **/
         public static const FRAGMENT_LOADED : String = "hlsEventFragmentLoaded";
-        /** Identifier for fragment load aborting for emergency switch down **/
+        /** Identifier for fragment load aborting for emergency switch down */
         public static const FRAGMENT_LOAD_EMERGENCY_ABORTED : String = "hlsEventFragmentLoadEmergencyAborted";
         /** Identifier for a fragment playing event. **/
         public static const FRAGMENT_PLAYING : String = "hlsEventFragmentPlaying";
@@ -66,7 +66,7 @@ package org.mangui.hls.event {
         public static const PLAYLIST_DURATION_UPDATED : String = "hlsPlayListDurationUpdated";
         /** Identifier for a ID3 updated event **/
         public static const ID3_UPDATED : String = "hlsID3Updated";
-        /** Identifier for a caption data event ***/
+        /** Identifier for a caption data event **/
         public static const CAPTION_DATA : String = "hlsCaptionData";
         /** Identifier for a fps drop event **/
         public static const FPS_DROP : String = "hlsFPSDrop";
@@ -105,7 +105,7 @@ package org.mangui.hls.event {
         public var audioTrack : int;
         /** a complete ID3 payload from PES, as a hex dump **/
         public var ID3Data : String;
-        /** caption data ***/
+        /** caption data **/
         public var captionData : Array;
 
         /** Assign event parameter and dispatch. **/
