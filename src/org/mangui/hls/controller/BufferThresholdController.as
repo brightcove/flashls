@@ -2,11 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.controller {
+    import org.mangui.hls.HLS;
+    import org.mangui.hls.HLSSettings;
     import org.mangui.hls.constant.HLSLoaderTypes;
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.event.HLSLoadMetrics;
-    import org.mangui.hls.HLS;
-    import org.mangui.hls.HLSSettings;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
@@ -18,6 +18,7 @@ package org.mangui.hls.controller {
         private var _hls : HLS;
         private var _targetduration : Number;
         private var _minBufferLength : Number;
+        private var _minLiveBufferLength : Number;
 
         /** Create the loader. **/
         public function BufferThresholdController(hls : HLS) : void {
@@ -31,20 +32,23 @@ package org.mangui.hls.controller {
             _hls.removeEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.removeEventListener(HLSEvent.TAGS_LOADED, _fragmentLoadedHandler);
             _hls.removeEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
+			_hls = null;
         }
 
         public function get minBufferLength() : Number {
-            if (HLSSettings.minBufferLength == -1) {
-                return _minBufferLength;
-            } else {
-                return HLSSettings.minBufferLength;
-            }
+            var mbl : Number = HLSSettings.minBufferLength == -1
+				? _minBufferLength
+				: HLSSettings.minBufferLength;
+
+			return _hls.isAltAudio
+				? Math.max(mbl, _minLiveBufferLength)
+				: mbl;
         }
 
         public function get lowBufferLength() : Number {
             if (HLSSettings.minBufferLength == -1) {
                 // in automode, low buffer threshold should be less than min auto buffer
-                return Math.min(minBufferLength / 2, HLSSettings.lowBufferLength);
+				return Math.min(minBufferLength/2, HLSSettings.lowBufferLength);
             } else {
                 return HLSSettings.lowBufferLength;
             }
@@ -53,6 +57,7 @@ package org.mangui.hls.controller {
         private function _manifestLoadedHandler(event : HLSEvent) : void {
             _targetduration = event.levels[_hls.startLevel].targetduration;
             _minBufferLength = _targetduration;
+			_minLiveBufferLength = _targetduration; // TODO Test for the minimum value that always works
         };
 
         private function _fragmentLoadedHandler(event : HLSEvent) : void {
@@ -60,7 +65,7 @@ package org.mangui.hls.controller {
             // only monitor main fragment metrics for buffer threshold computing
             if(metrics.type == HLSLoaderTypes.FRAGMENT_MAIN) {
                 /* set min buf len to be the time to process a complete segment, using current processing rate */
-                _minBufferLength = metrics.processing_duration * (_targetduration / metrics.duration);
+                _minBufferLength = Math.ceil(metrics.processing_duration * (_targetduration / metrics.duration));
                 // avoid min > max
                 if (HLSSettings.maxBufferLength) {
                     _minBufferLength = Math.min(HLSSettings.maxBufferLength, _minBufferLength);
@@ -74,7 +79,7 @@ package org.mangui.hls.controller {
                 CONFIG::LOGGING {
                     Log.debug2("AutoBufferController:minBufferLength:" + _minBufferLength);
                 }
-            };
+            }
         }
     }
 }

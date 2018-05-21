@@ -7,9 +7,9 @@ package org.mangui.hls {
     import flash.events.Event;
     import flash.events.EventDispatcher;
     import flash.net.NetConnection;
-    import flash.net.NetStream;
     import flash.net.URLLoader;
     import flash.net.URLStream;
+
     import org.mangui.hls.constant.HLSSeekStates;
     import org.mangui.hls.controller.AudioTrackController;
     import org.mangui.hls.controller.LevelController;
@@ -25,6 +25,48 @@ package org.mangui.hls {
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
     }
+
+	[Event(name="hlsEventManifestLoading", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventManifestParsed", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventManifestLoaded", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventLevelLoading", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventLevelLoadingAborted", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventLevelLoaded", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventLevelSwitch", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventLevelEndList", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventFragmentLoading", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventFragmentLoaded", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventFragmentLoadEmergencyAborted", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventFragmentPlaying", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventFragmentSkipped", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="audioTracksListChange", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="audioTrackSwitch", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventAudioLevelLoading", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventAudioLevelLoaded", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="subtitlesTracksListChange", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventSubtitlesTrackSwitch", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventSubtitlesLevelLoading", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventSubtitlesLevelLoaded", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventSubtitlesChange", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventTagsLoaded", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventLastFragmentLoaded", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventWarning", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventError", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventMediaTime", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsPlaybackState", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsSeekState", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventStreamTypeDidChange", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventPlayBackComplete", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsPlayListDurationUpdated", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsID3Updated", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsFPSDrop", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsFPSDropLevelCapping", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsFPSDropSmoothLevelSwitch", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsLiveLoadingStalled", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsStageSet", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsReady", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="fragmentMisalignment", type="org.mangui.hls.event.HLSEvent")]
+
     /** Class that manages the streaming process. **/
     public class HLS extends EventDispatcher {
         private var _levelLoader : LevelLoader;
@@ -60,6 +102,10 @@ package org.mangui.hls {
             this.addEventListener(HLSEvent.LEVEL_SWITCH, _levelSwitchHandler);
         };
 
+		public function get fragsAppended():int {
+			return _streamBuffer.fragsAppended;
+		}
+
         /** Forward internal errors. **/
         override public function dispatchEvent(event : Event) : Boolean {
             if (event.type == HLSEvent.ERROR) {
@@ -86,7 +132,6 @@ package org.mangui.hls {
             _altAudioLevelLoader.dispose();
             _audioTrackController.dispose();
             _levelController.dispose();
-            _hlsNetStream.dispose_();
             _streamBuffer.dispose();
             _levelLoader = null;
             _altAudioLevelLoader = null;
@@ -108,7 +153,7 @@ package org.mangui.hls {
             return _levelController.startLevel;
         };
 
-        /*  set the quality level used when starting a fresh playback */
+        /** Set the quality level used when starting a fresh playback */
         public function set startLevel(level : int) : void {
             _levelController.startLevel = level;
         };
@@ -133,7 +178,7 @@ package org.mangui.hls {
             return _level;
         };
 
-        /*  instant quality level switch (-1 for automatic level selection) */
+        /** instant quality level switch (-1 for automatic level selection) */
         public function set currentLevel(level : int) : void {
             _manual_level = level;
             // don't flush and seek if never seeked or if end of stream
@@ -143,23 +188,23 @@ package org.mangui.hls {
             }
         };
 
-        /*  set quality level for next loaded fragment (-1 for automatic level selection) */
+        /** set quality level for next loaded fragment (-1 for automatic level selection) */
         public function set nextLevel(level : int) : void {
             _manual_level = level;
             _streamBuffer.nextLevel = level;
         };
 
-        /*  set quality level for next loaded fragment (-1 for automatic level selection) */
+        /** set quality level for next loaded fragment (-1 for automatic level selection) */
         public function set loadLevel(level : int) : void {
             _manual_level = level;
         };
 
-        /* check if we are in automatic level selection mode */
+        /** check if we are in automatic level selection mode */
         public function get autoLevel() : Boolean {
             return (_manual_level == -1);
         };
 
-        /* return manual level */
+        /** return manual level */
         public function get manualLevel() : int {
             return _manual_level;
         };
@@ -182,6 +227,16 @@ package org.mangui.hls {
         /** Return the current playback position. **/
         public function get position() : Number {
             return _streamBuffer.position;
+        };
+
+        /** Return the current PTS (experimental) **/
+        public function get pts() : Number {
+            return _streamBuffer.pts;
+        };
+
+        /** Return the current program date as a timestamp (experimental) **/
+        public function get programDate() : Number {
+            return _streamBuffer.programDate;
         };
 
         /** Return the live main playlist sliding in seconds since previous out of buffer seek(). **/
@@ -208,7 +263,6 @@ package org.mangui.hls {
         public function get watched() : Number {
             return _hlsNetStream.watched;
         };
-
 
         /** Return the total nb of dropped video frames since last call to hls.load() **/
         public function get droppedFrames() : Number {
@@ -259,6 +313,14 @@ package org.mangui.hls {
         public function set audioTrack(val : int) : void {
             _audioTrackController.audioTrack = val;
         }
+
+		/** are we currently using an alternative audio track? */
+		public function get isAltAudio():Boolean {
+			return audioTracks
+				&& audioTracks.length
+				&& audioTrack >= 0
+				&& audioTracks[audioTrack].source == AudioTrack.FROM_PLAYLIST
+		}
 
         /* set stage */
         public function set stage(stage : Stage) : void {
