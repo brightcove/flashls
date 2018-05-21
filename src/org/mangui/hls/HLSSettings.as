@@ -245,7 +245,7 @@ package org.mangui.hls {
          *      0 - no skip (same as fragmentLoadSkipAfterMaxRetry = false)
          *      -1 - no limit for skipping, skip till the end of the playlist
          *
-         * Default is -1.
+         * Default is 5.
          */
         public static var maxSkippedFragments : int = 5;
 
@@ -352,22 +352,6 @@ package org.mangui.hls {
 		 * Default is HLSAltAudioSwitchMode.DEFAULT
 		 */
 		public static var altAudioSwitchMode:uint = HLSAltAudioSwitchMode.DEFAULT;
-
-		/**
-		 * When bandwidth availability increases, what is the maximum number
-		 * of quality levels we can we switch up at a time?
-		 *
-		 * Default is uint.MAX_VALUE
-		 */
-		public static var maxUpSwitchLimit:uint = uint.MAX_VALUE;
-
-		/**
-		 * When bandwidth availability decreases, what is the maximum number
-		 * of quality levels we can we switch down at a time?
-		 *
-		 * Default is uint.MAX_VALUE
-		 */
-		public static var maxDownSwitchLimit:uint = uint.MAX_VALUE;
 
         /**
          * useHardwareVideoDecoder
