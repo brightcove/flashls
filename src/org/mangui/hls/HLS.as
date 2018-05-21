@@ -102,10 +102,6 @@ package org.mangui.hls {
             this.addEventListener(HLSEvent.LEVEL_SWITCH, _levelSwitchHandler);
         };
 
-		public function get fragsAppended():int {
-			return _streamBuffer.fragsAppended;
-		}
-
         /** Forward internal errors. **/
         override public function dispatchEvent(event : Event) : Boolean {
             if (event.type == HLSEvent.ERROR) {

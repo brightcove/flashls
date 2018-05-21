@@ -466,7 +466,7 @@ package org.mangui.hls.stream {
             CONFIG::LOGGING {
                 Log.info("HLSNetStream:seek(" + position + ")");
             }
-            _streamBuffer.seek(position, forceReload);
+            _streamBuffer.seek(position);
             _setSeekState(HLSSeekStates.SEEKING);
             switch(_playbackState) {
                 case HLSPlayStates.IDLE:
