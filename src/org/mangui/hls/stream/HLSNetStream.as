@@ -102,14 +102,14 @@ package org.mangui.hls.stream {
             super.client = _client;
         }
 
-		protected function _audioTrackSwitch(event:HLSEvent):void
-		{
-			if (_isReady && HLSSettings.altAudioSwitchMode == HLSAltAudioSwitchMode.ACTIVE) {
-				_setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);
-			}
-		}
+        protected function _audioTrackSwitch(event:HLSEvent):void
+        {
+            if (_isReady && HLSSettings.altAudioSwitchMode == HLSAltAudioSwitchMode.ACTIVE) {
+                _setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);
+            }
+        }
 
-        protected function onHLSFragmentChange(level : int, seqnum : int, cc : int, duration : Number, audio_only : Boolean, program_date : Number, width : int, height : int, auto_level : Boolean, customTagNb : int, id3TagNb : int, ... tags) : void {
+        public function onHLSFragmentChange(level : int, seqnum : int, cc : int, duration : Number, audio_only : Boolean, program_date : Number, width : int, height : int, auto_level : Boolean, customTagNb : int, id3TagNb : int, ... tags) : void {
             CONFIG::LOGGING {
                 Log.debug("playing fragment(level/sn/cc):" + level + "/" + seqnum + "/" + cc);
             }
@@ -212,18 +212,18 @@ package org.mangui.hls.stream {
                 if (!reachedEnd && !liveLoadingStalled && buffer < _bufferThresholdController.lowBufferLength) {
                     super.pause();
                     _setPlaybackState(_hls.playbackState == HLSPlayStates.PAUSED
-						? HLSPlayStates.PAUSED_BUFFERING
-						: HLSPlayStates.PLAYING_BUFFERING);
+                        ? HLSPlayStates.PAUSED_BUFFERING
+                        : HLSPlayStates.PLAYING_BUFFERING);
                 }
 
                 // if buffer len is above minBufferLength, get out of buffering state
                 if (buffer >= minBufferLength || reachedEnd || liveLoadingStalled) {
 
-					if (!_isReady)
-					{
-						_isReady = true;
-						_hls.dispatchEvent(new HLSEvent(HLSEvent.READY));
-					}
+                    if (!_isReady)
+                    {
+                        _isReady = true;
+                        _hls.dispatchEvent(new HLSEvent(HLSEvent.READY));
+                    }
 
                     if (_playbackState == HLSPlayStates.PLAYING_BUFFERING) {
                         CONFIG::LOGGING {
@@ -232,9 +232,9 @@ package org.mangui.hls.stream {
                         super.resume(); // NEIL: This resume is where we see blank/frozen video
                         _setPlaybackState(HLSPlayStates.PLAYING);
                     } else if (_playbackState == HLSPlayStates.PAUSED_BUFFERING) {
-	                    super.pause();
-	                    _setPlaybackState(HLSPlayStates.PAUSED);
-					}
+                       // super.pause();
+                        _setPlaybackState(HLSPlayStates.PAUSED);
+                    }
                 }
             }
         }
@@ -261,7 +261,7 @@ package org.mangui.hls.stream {
 
         /** append tags to NetStream **/
         public function appendTags(tags : Vector.<FLVTag>) : void {
-			if (_seekState == HLSSeekStates.SEEKING) {
+            if (_seekState == HLSSeekStates.SEEKING) {
                 /* this is our first injection after seek(),
                 let's flush netstream now
                 this is to avoid black screen during seek command */
@@ -274,7 +274,7 @@ package org.mangui.hls.stream {
                 try {
                     super['useHardwareDecoder'] = HLSSettings.useHardwareVideoDecoder;
                 }
-				catch(e : Error) {
+                catch(e : Error) {
                     // Ignore errors, we're running in FP < 11.1
                 }
 
@@ -409,7 +409,7 @@ package org.mangui.hls.stream {
             }
             _isReady = false;
             seek(param.start);
-			_setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);
+            _setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);
         }
 
         /** Pause playback. **/
@@ -459,34 +459,34 @@ package org.mangui.hls.stream {
         }
 
         override public function seek(position : Number) : void {
-			seekWithForceReloadOption(position);
-		}
+            seekWithForceReloadOption(position);
+        }
 
         /** Start playing data in the buffer. **/
-		public function seekWithForceReloadOption(position : Number, forceReload : Boolean = false) : void {
+        public function seekWithForceReloadOption(position : Number, forceReload : Boolean = false) : void {
             CONFIG::LOGGING {
                 Log.info("HLSNetStream:seek(" + position + ")");
             }
             _streamBuffer.seek(position, forceReload);
             _setSeekState(HLSSeekStates.SEEKING);
-			switch(_playbackState) {
-				case HLSPlayStates.IDLE:
-				case HLSPlayStates.PAUSED:
-				case HLSPlayStates.PAUSED_BUFFERING:
-					_setPlaybackState(HLSPlayStates.PAUSED_BUFFERING);
-					break;
-				case HLSPlayStates.PLAYING:
-				case HLSPlayStates.PLAYING_BUFFERING:
-					_setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);
-					break;
-				default:
-					break;
-			}
-			/* always pause NetStream while seeking, even if we are in play state
-			* in that case, NetStream will be resumed during next call to appendTags()
-			*/
-			super.pause();
-			_timer.start();
+            switch(_playbackState) {
+                case HLSPlayStates.IDLE:
+                case HLSPlayStates.PAUSED:
+                case HLSPlayStates.PAUSED_BUFFERING:
+                    _setPlaybackState(HLSPlayStates.PAUSED_BUFFERING);
+                    break;
+                case HLSPlayStates.PLAYING:
+                case HLSPlayStates.PLAYING_BUFFERING:
+                    _setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);
+                    break;
+                default:
+                    break;
+            }
+            /* always pause NetStream while seeking, even if we are in play state
+            * in that case, NetStream will be resumed during next call to appendTags()
+            */
+            super.pause();
+            _timer.start();
         }
 
         public override function set client(client : Object) : void {
@@ -510,8 +510,8 @@ package org.mangui.hls.stream {
             _setSeekState(HLSSeekStates.IDLE);
         }
 
-		public function get bufferThresholdController() : BufferThresholdController {
-			return _bufferThresholdController;
-		}
-	}
+        public function get bufferThresholdController() : BufferThresholdController {
+            return _bufferThresholdController;
+        }
+    }
 }
