@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.controller {
     import flash.display.Stage;
-    
+
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
     import org.mangui.hls.constant.HLSLoaderTypes;
@@ -32,7 +32,7 @@ package org.mangui.hls.controller {
         /** vector of levels with unique dimension with highest bandwidth **/
         private var _maxUniqueLevels : Vector.<Level> = null;
         /** nb level **/
-        private var _numLevels : int = 0;
+        private var _nbLevel: int = 0;
         private var _lastSegmentDuration : Number;
         private var _lastFetchDuration : Number;
         private var lastBandwidth : int;
@@ -82,10 +82,10 @@ package org.mangui.hls.controller {
             var levels : Vector.<Level> = event.levels;
             var maxswitchup : Number = 0;
             var minswitchdwown : Number = Number.MAX_VALUE;
-            _numLevels = levels.length;
-            _bitrate = new Vector.<uint>(_numLevels, true);
-            _switchup = new Vector.<Number>(_numLevels, true);
-            _switchdown = new Vector.<Number>(_numLevels, true);
+            _nbLevel = levels.length;
+            _bitrate = new Vector.<uint>(_nbLevel, true);
+            _switchup = new Vector.<Number>(_nbLevel, true);
+            _switchdown = new Vector.<Number>(_nbLevel, true);
             _autoLevelCapping = -1;
             _lastSegmentDuration = 0;
             _lastFetchDuration = 0;
@@ -93,15 +93,15 @@ package org.mangui.hls.controller {
 
             var i : int;
 
-            for (i = 0; i < _numLevels; i++) {
+            for (i = 0; i < _nbLevel; i++) {
                 _bitrate[i] = levels[i].bitrate;
             }
 
-            for (i = 0; i < _numLevels - 1; i++) {
+            for (i = 0; i < _nbLevel - 1; i++) {
                 _switchup[i] = (_bitrate[i + 1] - _bitrate[i]) / _bitrate[i];
                 maxswitchup = Math.max(maxswitchup, _switchup[i]);
             }
-            for (i = 0; i < _numLevels - 1; i++) {
+            for (i = 0; i < _nbLevel - 1; i++) {
                 _switchup[i] = Math.min(maxswitchup, 2 * _switchup[i]);
 
                 CONFIG::LOGGING {
@@ -109,11 +109,11 @@ package org.mangui.hls.controller {
                 }
             }
 
-            for (i = 1; i < _numLevels; i++) {
+            for (i = 1; i < _nbLevel; i++) {
                 _switchdown[i] = (_bitrate[i] - _bitrate[i - 1]) / _bitrate[i];
                 minswitchdwown = Math.min(minswitchdwown, _switchdown[i]);
             }
-            for (i = 1; i < _numLevels; i++) {
+            for (i = 1; i < _nbLevel; i++) {
                 _switchdown[i] = Math.max(2 * minswitchdwown, _switchdown[i]);
 
                 CONFIG::LOGGING {
@@ -186,7 +186,7 @@ package org.mangui.hls.controller {
         private function get _maxLevel() : int {
             // if set, _autoLevelCapping takes precedence
             if(_autoLevelCapping >= 0) {
-                return Math.min(_numLevels - 1, _autoLevelCapping);
+                return Math.min(_nbLevel - 1, _autoLevelCapping);
             } else if (HLSSettings.capLevelToStage) {
                 var maxLevelsCount : int = _maxUniqueLevels.length;
 
@@ -248,7 +248,7 @@ package org.mangui.hls.controller {
                 }
                 return maxLevelIdx;
             } else {
-                return _numLevels - 1;
+                return _nbLevel - 1;
             }
         }
 
@@ -273,7 +273,7 @@ package org.mangui.hls.controller {
 			newLevel = Math.max(minLevel, Math.min(newLevel, maxLevel));
 
 			return newLevel;
-			
+
 			/*
             if (!_hls.stream.isReady || _lastFetchDuration == 0 || _lastSegmentDuration == 0) {
                 return current_level;
@@ -289,28 +289,28 @@ package org.mangui.hls.controller {
             var sftm : Number = Math.min(_lastSegmentDuration, rsft) / _lastFetchDuration;
             var max_level : Number = _maxLevel;
             var switch_to_level : int = current_level;
-            
+
             CONFIG::LOGGING {
                 Log.info("rsft: " + rsft);
                 Log.info("sftm: " + sftm);
             }
-            
+
             // to switch level up :
             // rsft should be greater than switch up condition
             if (current_level < max_level && sftm > 1+_switchup[current_level]) {
                 CONFIG::LOGGING {
                     Log.debug("sftm > 1+_switchup[_level] = "+sftm+" > "+(1+_switchup[current_level]));
                 }
-                
+
                 var maxUpSwitchLimit:uint = Math.max(1, HLSSettings.maxUpSwitchLimit);
                 max_level = Math.min(max_level, current_level+maxUpSwitchLimit);
-                
-                while (switch_to_level < max_level 
+
+                while (switch_to_level < max_level
                     && sftm > 1+_switchup[switch_to_level]) {
                     ++switch_to_level;
                 }
             }
-            
+
             // to switch level down :
             // rsft should be smaller than switch up condition,
             // or the current level is greater than max level
@@ -333,11 +333,11 @@ package org.mangui.hls.controller {
                     }
                 }
             }
-            
+
             // Then we should check if selected level is higher than max_level if so, than take the min of those two
             var maxDownSwitchLimit:uint = Math.max(1, HLSSettings.maxDownSwitchLimit);
             switch_to_level = Math.min(max_level, Math.max(switch_to_level, current_level-maxDownSwitchLimit));
-            
+
             CONFIG::LOGGING {
                 if (switch_to_level != current_level) {
                     Log.debug("switch to level " + switch_to_level);

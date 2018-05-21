@@ -7,7 +7,7 @@ package org.mangui.hls {
     import org.mangui.hls.constant.HLSSeekMode;
 
     public final class HLSSettings extends Object {
-		
+
         /**
          * autoStartLoad
          *
@@ -20,9 +20,9 @@ package org.mangui.hls {
          *
          * Default is true
          */
-		
+
         public static var autoStartLoad : Boolean = true;
-		
+
         /**
          * capLevelToStage
          *
@@ -35,7 +35,7 @@ package org.mangui.hls {
          *
          * Default is false
          */
-        public static var capLevelToStage : Boolean = true;
+        public static var capLevelToStage : Boolean = false;
 
         /**
          * maxLevelCappingMode
@@ -243,11 +243,11 @@ package org.mangui.hls {
          *
          * Maximum count of skipped fragments in a row before an I/O Error will be raised.
          *      0 - no skip (same as fragmentLoadSkipAfterMaxRetry = false)
-         *      -1 - no limit for skipping, skip till the end of the playlist 
+         *      -1 - no limit for skipping, skip till the end of the playlist
          *
          * Default is -1.
          */
-        public static var maxSkippedFragments : int = -1;
+        public static var maxSkippedFragments : int = 5;
 
         /**
          * flushLiveURLCache
@@ -297,7 +297,7 @@ package org.mangui.hls {
          *   -1  means infinite retry
          */
          public static var manifestRedundantLoadmaxRetry : int = 3;
-		 
+
         /**
          * startFromBitrate
          *
@@ -342,76 +342,33 @@ package org.mangui.hls {
          * Default is -1
          */
         public static var seekFromLevel : Number = -1;
-		
-		/**
-		 * subtitlesAutoSelectDefault
-		 * 
-		 * Should a subtitles track automatically be selected if it is flagged 
-		 * as DEFAULT=YES?
-		 * 
-		 * Default is false
-		 */
-		public static var subtitlesAutoSelectDefault:Boolean = false;
-		
+
         /**
-         * subtitlesAutoSelect
-         * 
-         * Should a subtitles track automatically be selected if it is flagged 
-         * as AUTOSELECT=YES and the language matches the current system locale?
-		 * If true, these subtitles will always be selected in preference to 
-		 * default subtitles. 
-         * 
-         * Default is true 
-         */
-        public static var subtitlesAutoSelect:Boolean = true;
-        
-        /**
-         * subtitlesAutoSelectForced
-         * 
-         * Should a subtitles track automatically be selected is it is flagged 
-         * as FORCED=YES? If true, forced subtitles will always be selected 
-		 * in preference to all others.
-         * 
-         * Default is true 
-         */
-        public static var subtitlesAutoSelectForced:Boolean = true;
-        
-        /**
-         * subtitlesUseFlvTagForVod
-         * 
-         * Should VOD subtitles be appended directly into the stream or handled
-		 * using media time events? 
-         * 
-         * Default is false
-         */
-        public static var subtitlesUseFlvTagForVod:Boolean = false;
-		
-		/**
 		 * altAudioSwitchMode
-		 * 
+		 *
 		 * Selects which method to use when switching between alternative audio
 		 * streams.
-		 * 
+		 *
 		 * Default is HLSAltAudioSwitchMode.DEFAULT
 		 */
-		public static var altAudioSwitchMode:uint = HLSAltAudioSwitchMode.DEFAULT; 
-		
+		public static var altAudioSwitchMode:uint = HLSAltAudioSwitchMode.DEFAULT;
+
 		/**
-		 * When bandwidth availability increases, what is the maximum number 
+		 * When bandwidth availability increases, what is the maximum number
 		 * of quality levels we can we switch up at a time?
-		 * 
+		 *
 		 * Default is uint.MAX_VALUE
 		 */
 		public static var maxUpSwitchLimit:uint = uint.MAX_VALUE;
-		
+
 		/**
-		 * When bandwidth availability decreases, what is the maximum number 
+		 * When bandwidth availability decreases, what is the maximum number
 		 * of quality levels we can we switch down at a time?
-		 * 
+		 *
 		 * Default is uint.MAX_VALUE
 		 */
 		public static var maxDownSwitchLimit:uint = uint.MAX_VALUE;
-		
+
         /**
          * useHardwareVideoDecoder
          *
@@ -467,9 +424,6 @@ package org.mangui.hls {
          * Default is true
          */
         public static var logError : Boolean = true;
-		
-		/* Internal */
-		
-		private static var _altAudioPassiveSwitching:Boolean = false;
+
     }
 }
