@@ -229,16 +229,6 @@ package org.mangui.hls {
             return _streamBuffer.position;
         };
 
-        /** Return the current PTS (experimental) **/
-        public function get pts() : Number {
-            return _streamBuffer.pts;
-        };
-
-        /** Return the current program date as a timestamp (experimental) **/
-        public function get programDate() : Number {
-            return _streamBuffer.programDate;
-        };
-
         /** Return the live main playlist sliding in seconds since previous out of buffer seek(). **/
         public function get liveSlidingMain() : Number {
             return _streamBuffer.liveSlidingMain;

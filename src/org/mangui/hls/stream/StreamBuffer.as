@@ -80,8 +80,6 @@ package org.mangui.hls.stream {
         private var _lastMediaTimeUpdate : int;
         /* overlapping fragment stuff */
         private var _overlappingTags : Vector.<FLVTag>;
-        // Subtitles separated to prevent them being cleared when continuity changes
-        private var _overlappingSubtitlesTags : Vector.<FLVTag>;
         private var _overlappingStartPosition : Number;
         private var _overlappingMinPTS : Number;
 
@@ -234,7 +232,6 @@ package org.mangui.hls.stream {
             var i:uint;
 
             if(fragmentType == HLSLoaderTypes.FRAGMENT_MAIN) {
-                addSubtitleTags(tags, min_pts, max_pts);
                 sliding = _liveSlidingMain;
                 // if a new fragment is being appended
                 if(fragLevel != _fragMainLevel || fragSN != _fragMainSN) {
@@ -335,7 +332,6 @@ package org.mangui.hls.stream {
                 */
                 _nextExpectedAbsoluteStartPosMain = nextRelativeStartPos + sliding;
             } else if (fragmentType == HLSLoaderTypes.FRAGMENT_ALTAUDIO) {
-                addSubtitleTags(tags, min_pts, max_pts);
                 sliding = _liveSlidingAltAudio;
                 // if a new fragment is being appended
                 if(fragLevel != _fragAltAudioLevel || fragSN != _fragAltAudioSN) {
@@ -369,24 +365,16 @@ package org.mangui.hls.stream {
                 */
                 _nextExpectedAbsoluteStartPosAltAudio = nextRelativeStartPos + sliding;
 
-            } /*else if (fragmentType == HLSLoaderTypes.FRAGMENT_SUBTITLES) {
-                // Remove anything that's scheduled to appear before the video starts
-                for (i=0; i<tags.length; i++) {
-                    // This should be handled by the _metaTags filter, but possibly causing video freeze without it?
-                    if (!_videoTags.length || tags[i].pts > _videoTags[_videoTags.length-1].tag.pts) {
-                        _overlappingSubtitlesTags.push(tags.splice(i--,1)[0]);
-                    } else if (tags[i].pts < _videoTags[0].tag.pts) {
-                        tags.splice(i--, 1);
-                    }
-                }
-                if (!tags.length) return;
-            }*/
+            }
+
+            var captions: Array = [];
 
             for each (var tag : FLVTag in tags) {
 //                CONFIG::LOGGING {
 //                    Log.debug2('append type/dts/pts:' + tag.typeString + '/' + tag.dts + '/' + tag.pts);
 //                }
                 var pos : Number = startPosition + (tag.pts - min_pts) / 1000;
+                var posDTS : Number = startPosition + (tag.dts - min_pts) / 1000;
                 var tagData : FLVData = new FLVData(tag, pos, sliding, continuity, fragmentType, fragIdx, fragLevel, fragSN);
                 switch(tag.type) {
                     case FLVTag.DISCONTINUITY:
@@ -406,8 +394,19 @@ package org.mangui.hls.stream {
                         _metaTags.push(tagData);
                         metaAppended = true;
                         break;
+                     case FLVTag.CAPTION_DATA:
+                        captions.push({
+                            pos: _liveSlidingMain ? _liveSlidingMain + pos : pos,
+                            dts: _liveSlidingMain ? _liveSlidingMain + posDTS : posDTS,
+                            data: tag.captionData
+                        });
+                        break;
                     default:
                 }
+            }
+
+            if (captions.length) {
+                _hls.dispatchEvent(new HLSEvent(HLSEvent.CAPTION_DATA, captions));
             }
 
             if(headerAppended) {
@@ -422,15 +421,6 @@ package org.mangui.hls.stream {
                 /* if in seeking mode, force timer start here, this could help reducing the seek time by 100ms */
                 _timer.start();
             }
-        }
-
-        protected function addSubtitleTags(tags:Vector.<FLVTag>, min_pts:Number, max_pts:Number):Vector.<FLVTag> {
-            for (var i:uint=0; i<_overlappingSubtitlesTags.length; i++) {
-                if (_overlappingSubtitlesTags[i].pts >= min_pts || _overlappingSubtitlesTags[i].pts <= max_pts) {
-                    tags.push(_overlappingSubtitlesTags.splice(i--,1)[0]);
-                }
-            }
-            return tags;
         }
 
         /** Return current media position **/
@@ -449,28 +439,6 @@ package org.mangui.hls.stream {
                     }
                     return pos;
             }
-        }
-
-        /** Experimental: return the current PTS */
-        public function get pts() : Number {
-            if (_hls.type == HLSTypes.VOD) {
-                return position*1000;
-            } else if (_fragMainLevel != -1) {
-                var frag:Fragment = _hls.levels[_fragMainLevel].getFragmentfromSeqNum(_fragMainSN);
-                if (frag) return frag.data.pts_start_computed + (position%10)*1000;
-            }
-            return 0;
-        }
-
-        /** Experimental: return the current program date as a timestamp */
-        public function get programDate() : Number {
-            if (_hls.type == HLSTypes.VOD) {
-                return position*1000;
-            } else if (_fragMainLevel != -1) {
-                var frag:Fragment = _hls.levels[_fragMainLevel].getFragmentfromSeqNum(_fragMainSN);
-                if (frag) return frag.program_date + (position%10)*1000;
-            }
-            return 0;
         }
 
         public function get liveSlidingMain() : Number {
@@ -495,7 +463,6 @@ package org.mangui.hls.stream {
             _metaTags = new Vector.<FLVData>();
             _headerTags = new Vector.<FLVData>();
             _overlappingTags = new Vector.<FLVTag>();
-            _overlappingSubtitlesTags = new Vector.<FLVTag>();
             _fragMainLevel = _fragAltAudioLevel = _fragMainLevelNetStream = -1;
             _fragMainSN = _fragAltAudioSN = _fragMainSNNetStream = 0;
             FLVData.refPTSMain = FLVData.refPTSAltAudio = NaN;
@@ -519,8 +486,6 @@ package org.mangui.hls.stream {
             _liveSlidingAltAudio = 0;
             var _filteredHeaderTags : Vector.<FLVData> = _headerTags.filter(filterAACHeader);
             _headerIdx -= (_headerTags.length - _filteredHeaderTags.length);
-
-            // TODO Do we need to force alt audio loader to start loading from earlier time?
         }
 
         private function filterAACHeader(item : FLVData, index : int, vector : Vector.<FLVData>) : Boolean {
@@ -593,7 +558,7 @@ package org.mangui.hls.stream {
         }
 
         private function get audioExpected() : Boolean {
-            return _fragmentLoader.audioExpected || _useAltAudio;
+            return (_fragmentLoader.audioExpected || _useAltAudio);
         }
 
         private function get videoExpected() : Boolean {
@@ -786,14 +751,8 @@ package org.mangui.hls.stream {
                         CONFIG::LOGGING {
                             var flvdata0 : FLVData = data[0];
                             Log.debug('appending first level/sn/type/dts/pts/position:' + flvdata0.fragLevel + '/' + flvdata0.fragSN + '/' + flvdata0.tag.typeString + '/' + flvdata0.tag.dts + '/' + flvdata0.tag.pts + '/' + (flvdata0.positionAbsolute - _liveSlidingMain).toFixed(2));
-                            if (isNaN(flvdata0.positionAbsolute - _liveSlidingMain)) {
-                                Log.warn(this+" First position for level/sn/type "+flvdata0.fragLevel+"/"+flvdata0.fragSN+"/"+flvdata0.tag.typeString+" is NaN!");
-                            }
                             flvdata0 = data[data.length-1];
                             Log.debug('appending last  level/sn/type/dts/pts/position:' + flvdata0.fragLevel + '/' + flvdata0.fragSN + '/' + flvdata0.tag.typeString + '/' + flvdata0.tag.dts + '/' + flvdata0.tag.pts + '/' + (flvdata0.positionAbsolute - _liveSlidingMain).toFixed(2));
-                            if (isNaN(flvdata0.positionAbsolute - _liveSlidingMain)) {
-                                Log.warn(this+" Last position for level/sn/type "+flvdata0.fragLevel+"/"+flvdata0.fragSN+"/"+flvdata0.tag.typeString+" is NaN!");
-                            }
                         }
                         _seekingOutsideBuffer = false;
                         _hls.stream.appendTags(tags);

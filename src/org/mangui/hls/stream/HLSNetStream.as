@@ -273,8 +273,7 @@ package org.mangui.hls.stream {
                 // useHardwareDecoder was added in FP11.1, but this allows us to include the option in all builds
                 try {
                     super['useHardwareDecoder'] = HLSSettings.useHardwareVideoDecoder;
-                }
-                catch(e : Error) {
+                } catch(e : Error) {
                     // Ignore errors, we're running in FP < 11.1
                 }
 
