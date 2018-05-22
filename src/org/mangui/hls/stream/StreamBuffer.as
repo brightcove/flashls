@@ -134,7 +134,7 @@ package org.mangui.hls.stream {
          * and inject from that point
          * if seek position out of buffer, ask fragment loader to retrieve data
          */
-        public function seek(position : Number, forceReload : Boolean = false) : Boolean {
+        public function seek(position : Number) : void {
             var loadLevel : Level;
             // cap max position if known playlist duration
             var maxPosition : Number = Number.POSITIVE_INFINITY;
@@ -148,10 +148,10 @@ package org.mangui.hls.stream {
             if (_hls.type == HLSTypes.LIVE && (position == -1 || position == -2) && loadLevel) {
                 /* If start position not specified for a live stream, follow HLS spec :
                     If the EXT-X-ENDLIST tag is not present
-                    and client intends to play the media regularly (i.e. in playlist
+                    and the client intends to play the media regularly (i.e. in playlist
                     order at the nominal playback rate), the client SHOULD NOT
-                    choose a segment which starts less than
-                    three target durations from the end of the Playlist file */
+                    choose a segment which starts less than three target durations from
+                    the end of the Playlist file */
                 _seekPositionRequested = Math.max(loadLevel.targetduration, loadLevel.duration - 3*loadLevel.averageduration);
             } else if (position == -2) {
                 _seekPositionRequested = _hls.position + 0.1;
@@ -162,7 +162,7 @@ package org.mangui.hls.stream {
                 Log.debug("seek : requested position:" + position.toFixed(2) + ", seek position:" + _seekPositionRequested.toFixed(2) + ",min/max buffer position:" + min_pos.toFixed(2) + "/" + max_pos.toFixed(2));
             }
             // check if we can seek in buffer
-            if (!forceReload && _seekPositionRequested >= min_pos && _seekPositionRequested <= max_pos) {
+            if (_seekPositionRequested >= min_pos && _seekPositionRequested <= max_pos) {
                 _seekingOutsideBuffer = false;
                 _seekPositionReached = false;
                 _audioIdx = _videoIdx = _metaIdx = _headerIdx = 0;
@@ -194,7 +194,6 @@ package org.mangui.hls.stream {
             _playbackCompleted = false;
             _lastMediaTimeUpdate = 0;
             _timer.start();
-            return _seekingOutsideBuffer;
         }
 
         public function appendTags(fragmentType : int, fragLevel : int, fragSN : int, tags : Vector.<FLVTag>, min_pts : Number, max_pts : Number, continuity : int, startPosition : Number) : void {
@@ -675,7 +674,7 @@ package org.mangui.hls.stream {
                 _lastMediaTimeUpdate = currentTime;
             }
 
-            // NEIL: Appending video with alt audio to the NetStream before reaching min buffer results in blank or frozen video
+            // Appending video with alt audio to the NetStream before reaching min buffer results in blank or frozen video
             if (canAppendTags) {
                 var netStreamBuffer : Number = _hls.stream.netStreamBufferLength;
                 /* only append tags if seek position has been reached, otherwise wait for more tags to come

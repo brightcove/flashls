@@ -75,8 +75,6 @@ package org.mangui.hls.stream {
         /** last NetStream.time, used to check if playback is over **/
         private var _lastNetStreamTime : Number;
 
-        /** Is this the first time the stream has been resumed after buffering? */
-
         /** Create the buffer. **/
         public function HLSNetStream(connection : NetConnection, hls : HLS, streamBuffer : StreamBuffer) : void {
             super(connection);
@@ -204,7 +202,6 @@ package org.mangui.hls.stream {
                         _setPlaybackState(HLSPlayStates.PAUSED_BUFFERING);
                     }
                 }
-
                 // if buffer len is above minBufferLength, get out of buffering state
                 if (buffer >= minBufferLength || reachedEnd || liveLoadingStalled) {
                     if (_playbackState == HLSPlayStates.PLAYING_BUFFERING) {
