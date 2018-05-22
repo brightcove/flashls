@@ -6,7 +6,6 @@ package org.mangui.hls.stream {
     import flash.events.TimerEvent;
     import flash.utils.getTimer;
     import flash.utils.Timer;
-
     import org.mangui.hls.constant.HLSLoaderTypes;
     import org.mangui.hls.constant.HLSPlayStates;
     import org.mangui.hls.constant.HLSSeekMode;

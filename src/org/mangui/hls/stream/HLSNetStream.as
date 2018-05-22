@@ -76,7 +76,6 @@ package org.mangui.hls.stream {
         private var _lastNetStreamTime : Number;
 
         /** Is this the first time the stream has been resumed after buffering? */
-        private var _isReady : Boolean;
 
         /** Create the buffer. **/
         public function HLSNetStream(connection : NetConnection, hls : HLS, streamBuffer : StreamBuffer) : void {
@@ -148,7 +147,7 @@ package org.mangui.hls.stream {
                 liveLoadingStalled : Boolean = _streamBuffer.liveLoadingStalled;
 
             if (_seekState != HLSSeekStates.SEEKING) {
-                if (_playbackState == HLSPlayStates.PLAYING) {
+                if (_playbackState == HLSPlayStates.PLAYING || _playbackState == HLSPlayStates.PLAYING_BUFFERING) {
                   /* check if play head reached end of stream.
                         this happens when
                             playstate is PLAYING
@@ -197,21 +196,17 @@ package org.mangui.hls.stream {
                 }
                 // if buffer len is below lowBufferLength, get into buffering state
                 if (!reachedEnd && !liveLoadingStalled && buffer < _bufferThresholdController.lowBufferLength) {
-                    super.pause();
-                    _setPlaybackState(_hls.playbackState == HLSPlayStates.PAUSED
-                        ? HLSPlayStates.PAUSED_BUFFERING
-                        : HLSPlayStates.PLAYING_BUFFERING);
+                    if (_playbackState == HLSPlayStates.PLAYING) {
+                        // low buffer condition and play state. switch to play buffering state
+                        _setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);
+                    } else if (_playbackState == HLSPlayStates.PAUSED) {
+                        // low buffer condition and pause state. switch to paused buffering state
+                        _setPlaybackState(HLSPlayStates.PAUSED_BUFFERING);
+                    }
                 }
 
                 // if buffer len is above minBufferLength, get out of buffering state
                 if (buffer >= minBufferLength || reachedEnd || liveLoadingStalled) {
-
-                    if (!_isReady)
-                    {
-                        _isReady = true;
-                        _hls.dispatchEvent(new HLSEvent(HLSEvent.READY));
-                    }
-
                     if (_playbackState == HLSPlayStates.PLAYING_BUFFERING) {
                         CONFIG::LOGGING {
                             Log.debug("resume playback, minBufferLength/bufferLength:"+minBufferLength.toFixed(2) + "/" + buffer.toFixed(2));
@@ -224,11 +219,6 @@ package org.mangui.hls.stream {
                     }
                 }
             }
-        }
-
-        /** Is the stream ready for playback? */
-        public function get isReady() : Boolean {
-            return _isReady;
         }
 
         /** Return the current playback state. **/
@@ -384,7 +374,6 @@ package org.mangui.hls.stream {
             CONFIG::LOGGING {
                 Log.info("HLSNetStream:play(" + _playStart + ")");
             }
-            _isReady = false;
             seek(_playStart);
             _setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);
         }
@@ -393,7 +382,6 @@ package org.mangui.hls.stream {
             CONFIG::LOGGING {
                 Log.info("HLSNetStream:play2(" + param.start + ")");
             }
-            _isReady = false;
             seek(param.start);
             _setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);
         }

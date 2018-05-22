@@ -154,7 +154,7 @@ package org.mangui.hls {
             _manual_level = level;
         };
 
-        /** check if we are in automatic level selection mode */
+        /* check if we are in automatic level selection mode */
         public function get autoLevel() : Boolean {
             return (_manual_level == -1);
         };
@@ -260,7 +260,7 @@ package org.mangui.hls {
             _audioTrackController.audioTrack = val;
         }
 
-		/** are we currently using an alternative audio track? */
+		/** check if we are currently using an alternative audio track? */
 		public function get isAltAudio():Boolean {
 			return audioTracks
 				&& audioTracks.length
