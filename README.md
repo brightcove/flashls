@@ -7,7 +7,7 @@ The plugin is compatible with the following players:
   - [Clappr](https://github.com/globocom/clappr) - a very easy open source player to use and to extend.
   - [Flowplayer Flash](#flowplayer) 3.2.12
   - [Flowplayer 6.x](https://flowplayer.org/news/)
-  - [MediaElement.js][3] (integrated in MediaElement.js since 2.15.0)  
+  - [MediaElement.js][3] (integrated in MediaElement.js since 2.15.0)
   - [OSMF 2.0](#strobe-media-playback-smp-and-other-osmf-based-players) based players (such as SMP and GrindPlayer)
   - [Video.js][1] 4.6, 4.7, 4.8 (adaptation done here [https://github.com/mangui/video-js-swf][2])
 
@@ -103,7 +103,7 @@ The plugin accepts several **optional** configuration options, such as:
     - any I/O error will trigger retries every 1s,2s,4s,8s (exponential, capped to 64s).  Please note specific handling for these 2 values:
         - 0, means no retry, error message will be triggered automatically
         - -1 means infinite retry
-  - `hls_fragmentloadmaxretry` (default 4s): max number of Fragment load retries after I/O Error. 
+  - `hls_fragmentloadmaxretry` (default 4s): max number of Fragment load retries after I/O Error.
     - Any I/O error will trigger retries every 1s,2s,4s,8s (exponential, capped to 64s). Please note specific handling for these 2 values:
         - 0, means no retry, error message will be triggered automatically
         - -1 means infinite retry
@@ -232,6 +232,16 @@ Run `FLEXPATH=/path/to/flex/sdk sh ./build.sh` inside the `build` directory
 `FLEXPATH` should point to your Flex SDK location (i.e. /opt/local/flex/4.6)
 
 After a successful build you will find fresh binaries in the `bin/debug` and `bin/release` directories
+
+You may require a specific version of Java (it needs to be 32-bit), or the Flex SDK.
+[Java used to build this project](https://support.apple.com/kb/DL1572?viewlocale=en_US&locale=en_US)
+[Flex SDK](https://github.com/JamesMGreene/node-flex-sdk)
+
+In which case you should be able to run something like:
+```
+JAVA_HOME=/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home
+FLEXPATH=~/path/to/node-flex-sdk/lib/flex_sdk/ sh ./build.sh
+```
 
 ## License
 

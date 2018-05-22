@@ -56,7 +56,7 @@ package org.mangui.hls.controller {
         private function _manifestLoadedHandler(event : HLSEvent) : void {
             _targetduration = event.levels[_hls.startLevel].targetduration;
             _minBufferLength = _targetduration;
-			_minLiveBufferLength = _targetduration;
+            _minLiveBufferLength = _targetduration;
         };
 
         private function _fragmentLoadedHandler(event : HLSEvent) : void {
