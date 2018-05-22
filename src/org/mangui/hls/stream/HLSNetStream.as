@@ -2,6 +2,19 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.stream {
+	import org.mangui.hls.constant.HLSPlayStates;
+    import org.mangui.hls.constant.HLSSeekStates;
+    import org.mangui.hls.controller.BufferThresholdController;
+    import org.mangui.hls.demux.ID3Tag;
+    import org.mangui.hls.event.HLSError;
+    import org.mangui.hls.event.HLSEvent;
+    import org.mangui.hls.event.HLSPlayMetrics;
+    import org.mangui.hls.flv.FLVTag;
+    import org.mangui.hls.HLS;
+    import org.mangui.hls.HLSSettings;
+
+    import by.blooddy.crypto.Base64;
+
     import flash.events.Event;
     import flash.events.NetStatusEvent;
     import flash.events.TimerEvent;
@@ -12,29 +25,13 @@ package org.mangui.hls.stream {
     import flash.utils.ByteArray;
     import flash.utils.Timer;
 
-    import by.blooddy.crypto.Base64;
-
-    import org.mangui.hls.HLS;
-    import org.mangui.hls.HLSSettings;
-    import org.mangui.hls.constant.HLSAltAudioSwitchMode;
-    import org.mangui.hls.constant.HLSPlayStates;
-    import org.mangui.hls.constant.HLSSeekStates;
-    import org.mangui.hls.controller.BufferThresholdController;
-    import org.mangui.hls.demux.ID3Tag;
-    import org.mangui.hls.event.HLSError;
-    import org.mangui.hls.event.HLSEvent;
-    import org.mangui.hls.event.HLSPlayMetrics;
-    import org.mangui.hls.flv.FLVTag;
-
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
     }
     /** Class that overrides standard flash.net.NetStream class, keeps the buffer filled, handles seek and play state
      *
      * play state transition :
-     *
-     *  FROM                                TO                                  CONDITION
-     * ------------------------------------------------------------------------------------------------------------------
+	 *              FROM                                TO                              condition
      *  HLSPlayStates.IDLE                  HLSPlayStates.PLAYING_BUFFERING     idle => play()/play2() called
      *  HLSPlayStates.IDLE                  HLSPlayStates.PAUSED_BUFFERING      idle => seek() called
      *  HLSPlayStates.PLAYING_BUFFERING     HLSPlayStates.PLAYING               buflen > minBufferLength
@@ -44,8 +41,7 @@ package org.mangui.hls.stream {
      *
      * seek state transition :
      *
-     *  FROM                                TO                                  CONDITION
-     * ------------------------------------------------------------------------------------------------------------------
+	 *              FROM                                TO                              condition
      *  HLSSeekStates.IDLE/SEEKED           HLSSeekStates.SEEKING               play()/play2()/seek() called
      *  HLSSeekStates.SEEKING               HLSSeekStates.SEEKED                upon first FLV tag appending after seek
      *  HLSSeekStates.SEEKED                HLSSeekStates.IDLE                  upon playback complete or stop() called
@@ -87,7 +83,6 @@ package org.mangui.hls.stream {
             super(connection);
             super.bufferTime = 0.1;
             _hls = hls;
-            _hls.addEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackSwitch);
             _skippedDuration = _watchedDuration = _droppedFrames = _decodedFrames = _lastNetStreamTime = 0;
             _bufferThresholdController = new BufferThresholdController(hls);
             _streamBuffer = streamBuffer;
@@ -102,17 +97,11 @@ package org.mangui.hls.stream {
             super.client = _client;
         }
 
-        protected function _audioTrackSwitch(event:HLSEvent):void
-        {
-            if (_isReady && HLSSettings.altAudioSwitchMode == HLSAltAudioSwitchMode.ACTIVE) {
-                _setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);
-            }
-        }
-
         public function onHLSFragmentChange(level : int, seqnum : int, cc : int, duration : Number, audio_only : Boolean, program_date : Number, width : int, height : int, auto_level : Boolean, customTagNb : int, id3TagNb : int, ... tags) : void {
             CONFIG::LOGGING {
                 Log.debug("playing fragment(level/sn/cc):" + level + "/" + seqnum + "/" + cc);
             }
+			_currentLevel = level;
             var customTagArray : Array = new Array();
             var id3TagArray : Array = new Array();
             for (var i : uint = 0; i < customTagNb; i++) {
@@ -127,9 +116,6 @@ package org.mangui.hls.stream {
                 CONFIG::LOGGING {
                     Log.debug("id3 tag:" + id3Tag);
                 }
-            }
-            if (!audio_only) {
-                _currentLevel = level;
             }
             _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_PLAYING, new HLSPlayMetrics(level, seqnum, cc, duration, audio_only, program_date, width, height, auto_level, customTagArray,id3TagArray)));
         }
@@ -229,10 +215,10 @@ package org.mangui.hls.stream {
                         CONFIG::LOGGING {
                             Log.debug("resume playback, minBufferLength/bufferLength:"+minBufferLength.toFixed(2) + "/" + buffer.toFixed(2));
                         }
-                        super.resume(); // NEIL: This resume is where we see blank/frozen video
+						// resume playback in case it was paused, this can happen if buffer was in really low condition (less than 0.1s)
+                        super.resume();
                         _setPlaybackState(HLSPlayStates.PLAYING);
                     } else if (_playbackState == HLSPlayStates.PAUSED_BUFFERING) {
-                       // super.pause();
                         _setPlaybackState(HLSPlayStates.PAUSED);
                     }
                 }
@@ -269,6 +255,7 @@ package org.mangui.hls.stream {
                 _droppedFrames += super.info.droppedFrames;
                 _decodedFrames += super.decodedFrames;
                 _skippedDuration = 0;
+                super.close();
 
                 // useHardwareDecoder was added in FP11.1, but this allows us to include the option in all builds
                 try {
@@ -277,7 +264,6 @@ package org.mangui.hls.stream {
                     // Ignore errors, we're running in FP < 11.1
                 }
 
-                super.close();
                 super.play(null);
                 super.appendBytesAction(NetStreamAppendBytesAction.RESET_SEEK);
                 // immediatly pause NetStream, it will be resumed when enough data will be buffered in the NetStream
@@ -458,16 +444,15 @@ package org.mangui.hls.stream {
         }
 
         override public function seek(position : Number) : void {
-            seekWithForceReloadOption(position);
-        }
-
-        /** Start playing data in the buffer. **/
-        public function seekWithForceReloadOption(position : Number, forceReload : Boolean = false) : void {
-            CONFIG::LOGGING {
+           CONFIG::LOGGING {
                 Log.info("HLSNetStream:seek(" + position + ")");
             }
             _streamBuffer.seek(position);
             _setSeekState(HLSSeekStates.SEEKING);
+			/* if HLS playback state was in PAUSED or IDLE state before seeking,
+             * switch to paused buffering state
+             * otherwise, switch to playing buffering state
+             */
             switch(_playbackState) {
                 case HLSPlayStates.IDLE:
                 case HLSPlayStates.PAUSED:
@@ -512,5 +497,11 @@ package org.mangui.hls.stream {
         public function get bufferThresholdController() : BufferThresholdController {
             return _bufferThresholdController;
         }
+
+		public function dispose_() : void {
+			close();
+			_timer.removeEventListener(TimerEvent.TIMER, _checkBuffer);
+			_bufferThresholdController.dispose();
+		}
     }
 }

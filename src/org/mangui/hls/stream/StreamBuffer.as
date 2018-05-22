@@ -4,11 +4,9 @@
 package org.mangui.hls.stream {
     import flash.events.Event;
     import flash.events.TimerEvent;
-    import flash.utils.Timer;
     import flash.utils.getTimer;
+    import flash.utils.Timer;
 
-    import org.mangui.hls.HLS;
-    import org.mangui.hls.HLSSettings;
     import org.mangui.hls.constant.HLSLoaderTypes;
     import org.mangui.hls.constant.HLSPlayStates;
     import org.mangui.hls.constant.HLSSeekMode;
@@ -19,9 +17,10 @@ package org.mangui.hls.stream {
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.event.HLSMediatime;
     import org.mangui.hls.flv.FLVTag;
+    import org.mangui.hls.HLS;
+    import org.mangui.hls.HLSSettings;
     import org.mangui.hls.loader.AltAudioFragmentLoader;
     import org.mangui.hls.loader.FragmentLoader;
-    import org.mangui.hls.model.AudioTrack;
     import org.mangui.hls.model.Fragment;
     import org.mangui.hls.model.Level;
 
@@ -149,9 +148,10 @@ package org.mangui.hls.stream {
             }
             if (_hls.type == HLSTypes.LIVE && (position == -1 || position == -2) && loadLevel) {
                 /* If start position not specified for a live stream, follow HLS spec :
-                    If the EXT-X-ENDLIST tag is not present and client intends to play
-                    the media regularly (i.e. in playlist order at the nominal playback
-                    rate), the client SHOULD NOT choose a segment which starts less than
+                    If the EXT-X-ENDLIST tag is not present
+                    and client intends to play the media regularly (i.e. in playlist
+                    order at the nominal playback rate), the client SHOULD NOT
+                    choose a segment which starts less than
                     three target durations from the end of the Playlist file */
                 _seekPositionRequested = Math.max(loadLevel.targetduration, loadLevel.duration - 3*loadLevel.averageduration);
             } else if (position == -2) {
@@ -181,8 +181,7 @@ package org.mangui.hls.stream {
                 _liveLoadingStalled = false;
                 _fragmentLoader.seek(_seekPositionRequested);
                 // check if we need to use alt audio fragment loader
-                //if (_hls.isAltAudio) {
-                if (_hls.audioTracks && _hls.audioTracks.length && _hls.audioTrack >= 0 && _hls.audioTracks[_hls.audioTrack].source == AudioTrack.FROM_PLAYLIST) {
+                if (_hls.isAltAudio) {
                     CONFIG::LOGGING {
                         Log.info("seek : need to load alt audio track");
                     }
@@ -390,6 +389,7 @@ package org.mangui.hls.stream {
             if(metaAppended) {
                 _metaTags = _metaTags.sort(compareTags);
             }
+
 
             if (_hls.seekState == HLSSeekStates.SEEKING) {
                 /* if in seeking mode, force timer start here, this could help reducing the seek time by 100ms */
