@@ -57,6 +57,8 @@ package org.mangui.hls {
          * Default is -1 = auto
          */
         public static var minBufferLength : Number = -1;
+
+
         /**
          * minBufferLengthCapping
          *
@@ -65,6 +67,8 @@ package org.mangui.hls {
          * Default is -1 = no capping
          */
         public static var minBufferLengthCapping : Number = -1;
+
+
 
         /**
          * maxBufferLength
@@ -314,6 +318,8 @@ package org.mangui.hls {
          * Default is -1
          */
         public static var startFromLevel : Number = -1;
+
+
         /**
          * autoStartMaxDuration
          *

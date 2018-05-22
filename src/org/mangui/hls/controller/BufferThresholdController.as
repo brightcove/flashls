@@ -78,7 +78,7 @@ package org.mangui.hls.controller {
                 CONFIG::LOGGING {
                     Log.debug2("AutoBufferController:minBufferLength:" + _minBufferLength);
                 }
-            }
-        };
+            };
+        }
     }
 }

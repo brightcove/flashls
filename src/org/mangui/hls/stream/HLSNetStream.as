@@ -120,6 +120,7 @@ package org.mangui.hls.stream {
             _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_PLAYING, new HLSPlayMetrics(level, seqnum, cc, duration, audio_only, program_date, width, height, auto_level, customTagArray,id3TagArray)));
         }
 
+
         public function onHLSFragmentSkipped(level : int, seqnum : int,duration : Number) : void {
             CONFIG::LOGGING {
                 Log.warn("skipped fragment(level/sn/duration):" + level + "/" + seqnum + "/" + duration);
