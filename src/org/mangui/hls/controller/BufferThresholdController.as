@@ -2,11 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.controller {
-    import org.mangui.hls.HLS;
-    import org.mangui.hls.HLSSettings;
     import org.mangui.hls.constant.HLSLoaderTypes;
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.event.HLSLoadMetrics;
+    import org.mangui.hls.HLS;
+    import org.mangui.hls.HLSSettings;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
@@ -32,7 +32,6 @@ package org.mangui.hls.controller {
             _hls.removeEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.removeEventListener(HLSEvent.TAGS_LOADED, _fragmentLoadedHandler);
             _hls.removeEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
-			_hls = null;
         }
 
         public function get minBufferLength() : Number {
@@ -57,7 +56,7 @@ package org.mangui.hls.controller {
         private function _manifestLoadedHandler(event : HLSEvent) : void {
             _targetduration = event.levels[_hls.startLevel].targetduration;
             _minBufferLength = _targetduration;
-			_minLiveBufferLength = _targetduration; // TODO Test for the minimum value that always works
+			_minLiveBufferLength = _targetduration;
         };
 
         private function _fragmentLoadedHandler(event : HLSEvent) : void {
@@ -80,6 +79,6 @@ package org.mangui.hls.controller {
                     Log.debug2("AutoBufferController:minBufferLength:" + _minBufferLength);
                 }
             }
-        }
+        };
     }
 }

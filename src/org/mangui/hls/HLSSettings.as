@@ -2,12 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls {
-    import org.mangui.hls.constant.HLSAltAudioSwitchMode;
-    import org.mangui.hls.constant.HLSMaxLevelCappingMode;
     import org.mangui.hls.constant.HLSSeekMode;
+    import org.mangui.hls.constant.HLSMaxLevelCappingMode;
 
     public final class HLSSettings extends Object {
-
         /**
          * autoStartLoad
          *
@@ -20,9 +18,7 @@ package org.mangui.hls {
          *
          * Default is true
          */
-
         public static var autoStartLoad : Boolean = true;
-
         /**
          * capLevelToStage
          *
@@ -61,7 +57,6 @@ package org.mangui.hls {
          * Default is -1 = auto
          */
         public static var minBufferLength : Number = -1;
-
         /**
          * minBufferLengthCapping
          *
@@ -264,9 +259,9 @@ package org.mangui.hls {
          *
          * Number of segments needed to start playback of Live stream.
          *
-         * Default is 2
+         * Default is 1
          */
-        public static var initialLiveManifestSize : uint = 2;
+        public static var initialLiveManifestSize : uint = 1;
 
         /**
          * manifestLoadMaxRetry
@@ -297,7 +292,6 @@ package org.mangui.hls {
          *   -1  means infinite retry
          */
          public static var manifestRedundantLoadmaxRetry : int = 3;
-
         /**
          * startFromBitrate
          *
@@ -320,7 +314,6 @@ package org.mangui.hls {
          * Default is -1
          */
         public static var startFromLevel : Number = -1;
-
         /**
          * autoStartMaxDuration
          *
@@ -342,16 +335,6 @@ package org.mangui.hls {
          * Default is -1
          */
         public static var seekFromLevel : Number = -1;
-
-        /**
-		 * altAudioSwitchMode
-		 *
-		 * Selects which method to use when switching between alternative audio
-		 * streams.
-		 *
-		 * Default is HLSAltAudioSwitchMode.DEFAULT
-		 */
-		public static var altAudioSwitchMode:uint = HLSAltAudioSwitchMode.DEFAULT;
 
         /**
          * useHardwareVideoDecoder
@@ -408,6 +391,5 @@ package org.mangui.hls {
          * Default is true
          */
         public static var logError : Boolean = true;
-
     }
 }

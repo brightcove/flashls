@@ -21,6 +21,7 @@ package org.mangui.hls.stream {
     import flash.net.NetConnection;
     import flash.net.NetStream;
     import flash.net.NetStreamAppendBytesAction;
+	import flash.net.NetStreamInfo;
     import flash.net.NetStreamPlayOptions;
     import flash.utils.ByteArray;
     import flash.utils.Timer;
@@ -74,7 +75,6 @@ package org.mangui.hls.stream {
         /** last NetStream.time, used to check if playback is over **/
         private var _lastNetStreamTime : Number;
 
-        // NEIL
         /** Is this the first time the stream has been resumed after buffering? */
         private var _isReady : Boolean;
 
@@ -443,6 +443,7 @@ package org.mangui.hls.stream {
             }
         }
 
+		/** Start playing data in the buffer. **/
         override public function seek(position : Number) : void {
            CONFIG::LOGGING {
                 Log.info("HLSNetStream:seek(" + position + ")");
