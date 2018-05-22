@@ -9,7 +9,6 @@ package org.mangui.hls.stream {
 
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
-    import org.mangui.hls.constant.HLSAltAudioSwitchMode;
     import org.mangui.hls.constant.HLSLoaderTypes;
     import org.mangui.hls.constant.HLSPlayStates;
     import org.mangui.hls.constant.HLSSeekMode;
@@ -837,8 +836,8 @@ package org.mangui.hls.stream {
             }
 
             // only push tags, if we found more than 500ms of tags
-            // AND (audio not expected OR audio tags found)
-            // AND (video not expected OR video tags found)
+            // (audio not expected OR audio tags found) AND
+            // (video not expected OR video tags found)
             if((!audioExpected || audioIdx >= 0) &&
                (!videoExpected || videoIdx >= 0) &&
                 filteredDuration > 500) {
@@ -905,6 +904,8 @@ package org.mangui.hls.stream {
 
         /* filter/tweak tags to seek accurately into the stream */
         private function seekFilterTags(tags : Vector.<FLVData>, absoluteStartPosition : Number) : Vector.<FLVData> {
+            var aacIdx : int,avcIdx : int,disIdx : int,metIdxMain : int,metIdxAltAudio : int, keyIdx : int,lastIdx : int;
+            aacIdx = avcIdx = disIdx = metIdxMain = metIdxAltAudio = keyIdx = lastIdx = -1;
 
             var filteredTags : Vector.<FLVData>=  new Vector.<FLVData>();
 
@@ -913,21 +914,12 @@ package org.mangui.hls.stream {
                 return filteredTags;
             }
 
-            var aacIdx : int,avcIdx : int,disIdx : int,metIdxMain : int,metIdxAltAudio : int, metIdxSubs : int, keyIdx : int,lastIdx : int;
-            aacIdx = avcIdx = disIdx = metIdxMain = metIdxAltAudio = metIdxSubs = keyIdx = lastIdx = -1;
             var idx2Clone : Vector.<int> = new Vector.<int>();
 
             // loop through all tags and find index position of header tags located before start position
             while(lastIdx ==-1) {
                 for (var i : int = 0; i < tags.length; i++) {
                     var data : FLVData = tags[i];
-                    // We don't need subtitles that were in the past, so we just throw them away
-                    // TODO Are NaN postitions caused by subtitle tags being appended?
-                    if (isNaN(data.positionAbsolute)) {
-                        //|| (data.positionAbsolute <= absoluteStartPosition && data.loaderType == HLSLoaderTypes.FRAGMENT_SUBTITLES)) {
-                        tags.splice(i--, 1);
-                        continue;
-                    }
                     if (data.positionAbsolute <= absoluteStartPosition) {
                         lastIdx = i;
                         // current tag is before requested start position
@@ -939,7 +931,7 @@ package org.mangui.hls.stream {
                             case FLVTag.METADATA:
                                 if (data.loaderType == HLSLoaderTypes.FRAGMENT_MAIN) {
                                     metIdxMain = i;
-                                } else if (data.loaderType == HLSLoaderTypes.FRAGMENT_ALTAUDIO) {
+                                } else {
                                     metIdxAltAudio = i;
                                 }
                                 break;
@@ -963,7 +955,7 @@ package org.mangui.hls.stream {
                     CONFIG::LOGGING {
                         Log.warn("seekFilterTags: startPosition > first tag position:" + absoluteStartPosition.toFixed(3) + '/' + tags[0].positionAbsolute.toFixed(3));
                     }
-                    if(tags.length && absoluteStartPosition != tags[0].positionAbsolute) {
+                    if(absoluteStartPosition != tags[0].positionAbsolute) {
                         absoluteStartPosition = tags[0].positionAbsolute;
                     } else {
                         // nothing found yet, let's return empty an array
@@ -994,7 +986,6 @@ package org.mangui.hls.stream {
             if (disIdx != -1)  idx2Clone.push(disIdx);
             if (metIdxMain != -1)  idx2Clone.push(metIdxMain);
             if (metIdxAltAudio != -1)  idx2Clone.push(metIdxAltAudio);
-            if (metIdxSubs != -1)  idx2Clone.push(metIdxSubs);
             if (aacIdx != -1)  idx2Clone.push(aacIdx);
             if (avcIdx != -1)  idx2Clone.push(avcIdx);
 
@@ -1344,45 +1335,7 @@ package org.mangui.hls.stream {
         }
 
         private function _audioTrackChange(event : HLSEvent) : void {
-            var stream:HLSNetStream = _hls.stream;
-            var isReady:Boolean = stream.isReady;
-            var f:Function
-            switch (HLSSettings.altAudioSwitchMode) {
-                case HLSAltAudioSwitchMode.ACTIVE:
-                    CONFIG::LOGGING {
-                        Log.debug("StreamBuffer : audio track changed, using ACTIVE method to switch to " + event.audioTrack);
-                    }
-                    if (isReady) {
-                        // Current implementation is effectively a hard reset of the current audio stream...
-                        function audioLevelLoadedHandler(e:HLSEvent):void {
-                            stream.seekWithForceReloadOption(-2, true);
-                            _hls.removeEventListener(HLSEvent.AUDIO_LEVEL_LOADED, audioLevelLoadedHandler);
-                        }
-                        flushBuffer();
-                        _timer.stop();
-                        _altAudioTrackSwitching = true;
-                        _hls.addEventListener(HLSEvent.AUDIO_LEVEL_LOADED, audioLevelLoadedHandler);
-                    } else {
-                        flushAudio();
-                    }
-                    break;
-
-                case HLSAltAudioSwitchMode.PASSIVE:
-                    CONFIG::LOGGING {
-                        Log.debug("StreamBuffer : audio track changed, using PASSIVE method to switch to " + event.audioTrack);
-                    }
-                    if (isReady) {
-                        break;
-                    }
-
-                case HLSAltAudioSwitchMode.DEFAULT:
-                default:
-                    CONFIG::LOGGING {
-                        Log.debug("StreamBuffer : audio track changed, using DEFAULT method to switch to " + event.audioTrack);
-                    }
-                    flushAudio();
-                    break;
-            }
+            flushAudio();
         }
 
         /** monitor fragment loader stall events, arm a boolean  **/
