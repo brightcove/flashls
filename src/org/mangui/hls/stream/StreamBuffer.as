@@ -152,7 +152,7 @@ package org.mangui.hls.stream {
                     order at the nominal playback rate), the client SHOULD NOT
                     choose a segment which starts less than three target durations from
                     the end of the Playlist file */
-                _seekPositionRequested = Math.max(loadLevel.targetduration, loadLevel.duration - 3*loadLevel.averageduration);
+                _seekPositionRequested = Math.max(loadLevel.targetduration, loadLevel.duration - 3 * loadLevel.averageduration);
             } else if (position == -2) {
                 _seekPositionRequested = _hls.position + 0.1;
             } else {
