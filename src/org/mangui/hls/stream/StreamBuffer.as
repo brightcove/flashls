@@ -21,6 +21,7 @@ package org.mangui.hls.stream {
     import org.mangui.hls.flv.FLVTag;
     import org.mangui.hls.loader.AltAudioFragmentLoader;
     import org.mangui.hls.loader.FragmentLoader;
+    import org.mangui.hls.model.AudioTrack;
     import org.mangui.hls.model.Fragment;
     import org.mangui.hls.model.Level;
 
@@ -148,19 +149,16 @@ package org.mangui.hls.stream {
             }
             if (_hls.type == HLSTypes.LIVE && (position == -1 || position == -2) && loadLevel) {
                 /* If start position not specified for a live stream, follow HLS spec :
-                * If the EXT-X-ENDLIST tag is not present and client intends to play
-                * the media regularly (i.e. in playlist order at the nominal playback
-                * rate), the client SHOULD NOT choose a segment which starts less than
-                * three target durations from the end of the Playlist file
-                */
+                    If the EXT-X-ENDLIST tag is not present and client intends to play
+                    the media regularly (i.e. in playlist order at the nominal playback
+                    rate), the client SHOULD NOT choose a segment which starts less than
+                    three target durations from the end of the Playlist file */
                 _seekPositionRequested = Math.max(loadLevel.targetduration, loadLevel.duration - 3*loadLevel.averageduration);
             } else if (position == -2) {
                 _seekPositionRequested = _hls.position + 0.1;
             } else {
                 _seekPositionRequested = Math.min(Math.max(position, 0), maxPosition);
             }
-
-
             CONFIG::LOGGING {
                 Log.debug("seek : requested position:" + position.toFixed(2) + ", seek position:" + _seekPositionRequested.toFixed(2) + ",min/max buffer position:" + min_pos.toFixed(2) + "/" + max_pos.toFixed(2));
             }
@@ -169,11 +167,11 @@ package org.mangui.hls.stream {
                 _seekingOutsideBuffer = false;
                 _seekPositionReached = false;
                 _audioIdx = _videoIdx = _metaIdx = _headerIdx = 0;
-                // seek position requested is an absolute position, add sliding main to make it absolute
-                _seekPositionRequested += _liveSlidingMain;
                 CONFIG::LOGGING {
                     Log.debug("seek in buffer");
                 }
+                // seek position requested is an absolute position, add sliding main to make it absolute
+                _seekPositionRequested += _liveSlidingMain;
             } else {
                 _seekingOutsideBuffer = true;
                 // stop any load in progress ...
@@ -183,7 +181,8 @@ package org.mangui.hls.stream {
                 _liveLoadingStalled = false;
                 _fragmentLoader.seek(_seekPositionRequested);
                 // check if we need to use alt audio fragment loader
-                if (_hls.isAltAudio) {
+                //if (_hls.isAltAudio) {
+                if (_hls.audioTracks && _hls.audioTracks.length && _hls.audioTrack >= 0 && _hls.audioTracks[_hls.audioTrack].source == AudioTrack.FROM_PLAYLIST) {
                     CONFIG::LOGGING {
                         Log.info("seek : need to load alt audio track");
                     }
@@ -209,8 +208,6 @@ package org.mangui.hls.stream {
             var computeSliding : Boolean = (_hls.type == HLSTypes.LIVE  || _liveSlidingMain || _liveSlidingAltAudio);
 
             var fragIdx : int;
-            var i:uint;
-
             if(fragmentType == HLSLoaderTypes.FRAGMENT_MAIN) {
                 sliding = _liveSlidingMain;
                 // if a new fragment is being appended
@@ -558,9 +555,11 @@ package org.mangui.hls.stream {
                     return Math.max(0, max_pos + _liveSlidingMain - _seekPositionRequested);
                 case HLSSeekStates.SEEKED:
                     if (audioExpected) {
-                        return videoExpected
-                            ? Math.min(audioBufferLength, videoBufferLength)
-                            : audioBufferLength
+                        if (videoExpected) {
+                            return Math.min(audioBufferLength, videoBufferLength);
+                        } else {
+                            return audioBufferLength;
+                        }
                     } else {
                         return videoBufferLength;
                     }
@@ -641,6 +640,10 @@ package org.mangui.hls.stream {
         };
 
         private function filternextFragments(item : FLVData, index : int, vector : Vector.<FLVData>) : Boolean {
+            // keep if return true
+            // we want to keep only if alt audio loader OR
+            // index less than start filtering index (i.e. we want to keep backbuffer) OR
+            // matching with current fragment appended tags
             return (item.loaderType == HLSLoaderTypes.FRAGMENT_ALTAUDIO ||
                         index < _filteringStartIdx ||
                         (item.fragLevel == _fragMainLevelNetStream &&  item.fragSN == _fragMainSNNetStream));
@@ -818,6 +821,7 @@ package org.mangui.hls.stream {
                     tags[disIdx].pts = tags[disIdx].dts = Math.min(audio_dts,video_dts);
                     filteredTags.push(tags[disIdx]);
                 }
+
                 if(metIdx >=0) {
                     tags[metIdx].pts = tags[metIdx].dts = Math.min(audio_dts,video_dts);
                     filteredTags.push(tags[metIdx]);
@@ -877,7 +881,6 @@ package org.mangui.hls.stream {
         private function seekFilterTags(tags : Vector.<FLVData>, absoluteStartPosition : Number) : Vector.<FLVData> {
             var aacIdx : int,avcIdx : int,disIdx : int,metIdxMain : int,metIdxAltAudio : int, keyIdx : int,lastIdx : int;
             aacIdx = avcIdx = disIdx = metIdxMain = metIdxAltAudio = keyIdx = lastIdx = -1;
-
             var filteredTags : Vector.<FLVData>=  new Vector.<FLVData>();
             var idx2Clone : Vector.<int> = new Vector.<int>();
 
@@ -1237,9 +1240,11 @@ package org.mangui.hls.stream {
 
         private function get min_pos() : Number {
             if (audioExpected) {
-                return videoExpected
-                    ? Math.max(min_audio_pos, min_video_pos)
-                    : min_audio_pos;
+                if (videoExpected) {
+                    return Math.max(min_audio_pos, min_video_pos);
+                } else {
+                    return min_audio_pos;
+                }
             } else {
                 return min_video_pos;
             }
@@ -1247,9 +1252,11 @@ package org.mangui.hls.stream {
 
         private function get min_min_pos() : Number {
             if (audioExpected) {
-                return videoExpected
-                    ? Math.min(min_audio_pos, min_video_pos)
-                    : min_audio_pos;
+                if (videoExpected) {
+                    return Math.min(min_audio_pos, min_video_pos);
+                } else {
+                    return min_audio_pos;
+                }
             } else {
                 return min_video_pos;
             }
@@ -1269,9 +1276,11 @@ package org.mangui.hls.stream {
 
         private function get max_pos() : Number {
             if (audioExpected) {
-                return videoExpected
-                    ? Math.min(max_audio_pos, max_video_pos)
-                    : max_audio_pos;
+                if (videoExpected) {
+                    return Math.min(max_audio_pos, max_video_pos);
+                } else {
+                    return max_audio_pos;
+                }
             } else {
                 return max_video_pos;
             }
@@ -1297,6 +1306,9 @@ package org.mangui.hls.stream {
         }
 
         private function _audioTrackChange(event : HLSEvent) : void {
+            CONFIG::LOGGING {
+                Log.debug("StreamBuffer : audio track changed, flushing audio buffer:" + event.audioTrack);
+            }
             flushAudio();
         }
 
