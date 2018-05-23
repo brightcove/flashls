@@ -154,6 +154,7 @@ package org.mangui.hls.stream {
                     the end of the Playlist file */
                 _seekPositionRequested = Math.max(loadLevel.targetduration, loadLevel.duration - 3 * loadLevel.averageduration);
             } else if (position == -2) {
+                // This stops a rare/occasional stutter
                 _seekPositionRequested = _hls.position + 0.1;
             } else {
                 _seekPositionRequested = Math.min(Math.max(position, 0), maxPosition);
@@ -655,7 +656,7 @@ package org.mangui.hls.stream {
         private function _checkBuffer(e : Event) : void {
             var pos : Number = position;
             var bufLen : Number = _hls.stream.bufferLength;
-            var watched : Number = _hls.stream.watched;
+            var watched : Number = (_hls.stream as HLSNetStream).watched;
             var currentTime : int = getTimer();
             var dispatchTimeUpdate : Boolean = (currentTime - _lastMediaTimeUpdate > HLSSettings.mediaTimePeriod);
             var duration : Number;
