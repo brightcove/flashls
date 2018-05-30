@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.stream {
-    import org.mangui.hls.constant.HLSPlayStates;
+	import org.mangui.hls.constant.HLSPlayStates;
     import org.mangui.hls.constant.HLSSeekStates;
     import org.mangui.hls.controller.BufferThresholdController;
     import org.mangui.hls.demux.ID3Tag;
@@ -21,7 +21,7 @@ package org.mangui.hls.stream {
     import flash.net.NetConnection;
     import flash.net.NetStream;
     import flash.net.NetStreamAppendBytesAction;
-    import flash.net.NetStreamInfo;
+	import flash.net.NetStreamInfo;
     import flash.net.NetStreamPlayOptions;
     import flash.utils.ByteArray;
     import flash.utils.Timer;
@@ -32,20 +32,20 @@ package org.mangui.hls.stream {
     /** Class that overrides standard flash.net.NetStream class, keeps the buffer filled, handles seek and play state
      *
      * play state transition :
-     * 				FROM								TO								condition
-     *  HLSPlayStates.IDLE              	HLSPlayStates.PLAYING_BUFFERING     idle => play()/play2() called
+	 *              FROM                                TO                              condition
+     *  HLSPlayStates.IDLE                  HLSPlayStates.PLAYING_BUFFERING     idle => play()/play2() called
      *  HLSPlayStates.IDLE                  HLSPlayStates.PAUSED_BUFFERING      idle => seek() called
-     *  HLSPlayStates.PLAYING_BUFFERING  	HLSPlayStates.PLAYING  				buflen > minBufferLength
-     *  HLSPlayStates.PAUSED_BUFFERING  	HLSPlayStates.PAUSED  				buflen > minBufferLength
-     *  HLSPlayStates.PLAYING  				HLSPlayStates.PLAYING_BUFFERING  	buflen < lowBufferLength
-     *  HLSPlayStates.PAUSED  				HLSPlayStates.PAUSED_BUFFERING  	buflen < lowBufferLength
+     *  HLSPlayStates.PLAYING_BUFFERING     HLSPlayStates.PLAYING               buflen > minBufferLength
+     *  HLSPlayStates.PAUSED_BUFFERING      HLSPlayStates.PAUSED                buflen > minBufferLength
+     *  HLSPlayStates.PLAYING               HLSPlayStates.PLAYING_BUFFERING     buflen < lowBufferLength
+     *  HLSPlayStates.PAUSED                HLSPlayStates.PAUSED_BUFFERING      buflen < lowBufferLength
      *
      * seek state transition :
      *
-     *              FROM                                TO                              condition
-     *  HLSSeekStates.IDLE/SEEKED           HLSSeekStates.SEEKING     play()/play2()/seek() called
-     *  HLSSeekStates.SEEKING               HLSSeekStates.SEEKED      upon first FLV tag appending after seek
-     *  HLSSeekStates.SEEKED                HLSSeekStates.IDLE        upon playback complete or stop() called
+	 *              FROM                                TO                              condition
+     *  HLSSeekStates.IDLE/SEEKED           HLSSeekStates.SEEKING               play()/play2()/seek() called
+     *  HLSSeekStates.SEEKING               HLSSeekStates.SEEKED                upon first FLV tag appending after seek
+     *  HLSSeekStates.SEEKED                HLSSeekStates.IDLE                  upon playback complete or stop() called
      */
     public class HLSNetStream extends NetStream {
         /** Reference to the framework controller. **/
@@ -71,7 +71,7 @@ package org.mangui.hls.stream {
         /** dropped frames counter **/
         private var _droppedFrames : Number;
         /** decoded frames counter **/
-        private var _decodedFrames : Number;
+        private var _decodedFrames: Number;
         /** last NetStream.time, used to check if playback is over **/
         private var _lastNetStreamTime : Number;
 
@@ -98,7 +98,7 @@ package org.mangui.hls.stream {
             CONFIG::LOGGING {
                 Log.debug("playing fragment(level/sn/cc):" + level + "/" + seqnum + "/" + cc);
             }
-            _currentLevel = level;
+			_currentLevel = level;
             var customTagArray : Array = new Array();
             var id3TagArray : Array = new Array();
             for (var i : uint = 0; i < customTagNb; i++) {
@@ -140,10 +140,9 @@ package org.mangui.hls.stream {
         /** timer function, check/update NetStream state, and append tags if needed **/
         private function _checkBuffer(e : Event) : void {
             var buffer : Number = this.bufferLength,
-                minBufferLength : Number =_bufferThresholdController.minBufferLength,
+                minBufferLength : Number = _bufferThresholdController.minBufferLength,
                 reachedEnd : Boolean = _streamBuffer.reachedEnd,
                 liveLoadingStalled : Boolean = _streamBuffer.liveLoadingStalled;
-            // Log.info("netstream/total:" + super.bufferLength + "/" + this.bufferLength);
 
             if (_seekState != HLSSeekStates.SEEKING) {
                 if (_playbackState == HLSPlayStates.PLAYING || _playbackState == HLSPlayStates.PLAYING_BUFFERING) {
@@ -209,7 +208,7 @@ package org.mangui.hls.stream {
                         CONFIG::LOGGING {
                             Log.debug("resume playback, minBufferLength/bufferLength:"+minBufferLength.toFixed(2) + "/" + buffer.toFixed(2));
                         }
-                        // resume playback in case it was paused, this can happen if buffer was in really low condition (less than 0.1s)
+						// resume playback in case it was paused, this can happen if buffer was in really low condition (less than 0.1s)
                         super.resume();
                         _setPlaybackState(HLSPlayStates.PLAYING);
                     } else if (_playbackState == HLSPlayStates.PAUSED_BUFFERING) {
@@ -246,11 +245,11 @@ package org.mangui.hls.stream {
                 _skippedDuration = 0;
                 super.close();
 
-               // useHardwareDecoder was added in FP11.1, but this allows us to include the option in all builds
+                // useHardwareDecoder was added in FP11.1, but this allows us to include the option in all builds
                 try {
                     super['useHardwareDecoder'] = HLSSettings.useHardwareVideoDecoder;
                 } catch(e : Error) {
-	               // Ignore errors, we're running in FP < 11.1
+                    // Ignore errors, we're running in FP < 11.1
                 }
 
                 super.play(null);
@@ -430,14 +429,14 @@ package org.mangui.hls.stream {
             }
         }
 
-        /** Start playing data in the buffer. **/
+		/** Start playing data in the buffer. **/
         override public function seek(position : Number) : void {
-            CONFIG::LOGGING {
+           CONFIG::LOGGING {
                 Log.info("HLSNetStream:seek(" + position + ")");
             }
             _streamBuffer.seek(position);
             _setSeekState(HLSSeekStates.SEEKING);
-            /* if HLS playback state was in PAUSED or IDLE state before seeking,
+			/* if HLS playback state was in PAUSED or IDLE state before seeking,
              * switch to paused buffering state
              * otherwise, switch to playing buffering state
              */
@@ -455,8 +454,8 @@ package org.mangui.hls.stream {
                     break;
             }
             /* always pause NetStream while seeking, even if we are in play state
-             * in that case, NetStream will be resumed during next call to appendTags()
-             */
+            * in that case, NetStream will be resumed during next call to appendTags()
+            */
             super.pause();
             _timer.start();
         }
@@ -482,10 +481,14 @@ package org.mangui.hls.stream {
             _setSeekState(HLSSeekStates.IDLE);
         }
 
-        public function dispose_() : void {
-            close();
-            _timer.removeEventListener(TimerEvent.TIMER, _checkBuffer);
-            _bufferThresholdController.dispose();
+        public function get bufferThresholdController() : BufferThresholdController {
+            return _bufferThresholdController;
         }
+
+		public function dispose_() : void {
+			close();
+			_timer.removeEventListener(TimerEvent.TIMER, _checkBuffer);
+			_bufferThresholdController.dispose();
+		}
     }
 }

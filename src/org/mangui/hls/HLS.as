@@ -108,7 +108,7 @@ package org.mangui.hls {
             return _levelController.startLevel;
         };
 
-        /*  set the quality level used when starting a fresh playback */
+        /* set the quality level used when starting a fresh playback */
         public function set startLevel(level : int) : void {
             _levelController.startLevel = level;
         };
@@ -133,7 +133,7 @@ package org.mangui.hls {
             return _level;
         };
 
-        /*  instant quality level switch (-1 for automatic level selection) */
+        /* instant quality level switch (-1 for automatic level selection) */
         public function set currentLevel(level : int) : void {
             _manual_level = level;
             // don't flush and seek if never seeked or if end of stream
@@ -143,13 +143,13 @@ package org.mangui.hls {
             }
         };
 
-        /*  set quality level for next loaded fragment (-1 for automatic level selection) */
+        /* set quality level for next loaded fragment (-1 for automatic level selection) */
         public function set nextLevel(level : int) : void {
             _manual_level = level;
             _streamBuffer.nextLevel = level;
         };
 
-        /*  set quality level for next loaded fragment (-1 for automatic level selection) */
+        /* set quality level for next loaded fragment (-1 for automatic level selection) */
         public function set loadLevel(level : int) : void {
             _manual_level = level;
         };
@@ -259,6 +259,14 @@ package org.mangui.hls {
         public function set audioTrack(val : int) : void {
             _audioTrackController.audioTrack = val;
         }
+
+		/** check if we are currently using an alternative audio track? */
+		public function get isAltAudio():Boolean {
+			return audioTracks
+				&& audioTracks.length
+				&& audioTrack >= 0
+				&& audioTracks[audioTrack].source == AudioTrack.FROM_PLAYLIST
+		}
 
         /* set stage */
         public function set stage(stage : Stage) : void {
