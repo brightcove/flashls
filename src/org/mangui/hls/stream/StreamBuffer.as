@@ -368,8 +368,8 @@ package org.mangui.hls.stream {
                         break;
                      case FLVTag.CAPTION_DATA:
                         captions.push({
-                            pos: _liveSlidingMain ? _liveSlidingMain + pos : pos,
-                            dts: _liveSlidingMain ? _liveSlidingMain + posDTS : posDTS,
+                            pos: _liveSlidingMain ? _liveSlidingMain + (tag.pts / 1000) : (tag.pts / 1000),
+                            dts: _liveSlidingMain ? _liveSlidingMain + (tag.dts / 1000) : (tag.dts / 1000),
                             data: tag.captionData
                         });
                         break;
