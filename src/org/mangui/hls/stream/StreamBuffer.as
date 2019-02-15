@@ -124,14 +124,24 @@ package org.mangui.hls.stream {
         }
 
         public function get canAppendTags():Boolean {
+            // usually 3
+            var lowBufferLength : Number = _hls.stream.bufferThresholdController.lowBufferLength;
+            // usually 6
+            var minBufferLength : Number = _hls.stream.bufferThresholdController.minBufferLength;
+
             /*
-             * If there is only one segment in a VOD playlist, return true. This
-             * isolates a case where content would never start because the below
+             * If there is only one segment in a VOD playlist, and we have buffered enough
+             * data return true. Enough data meaning that bufferLength is >= lowBufferLength
+             * or bufferLength is >= the duration of the single segment content.
+             * This isolates a case where content would never start because the below
              * threshold comparison would always be false with single segment VOD content
              * since the minBufferLength is equal to the target duration in that case
              */
-            return _hls.type === HLSTypes.VOD && numberOfSegmentsInPlaylist === 1 ||
-              !(_seekingOutsideBuffer && _hls.isAltAudio && bufferLength <= _hls.stream.bufferThresholdController.minBufferLength);
+            return _hls.type === HLSTypes.VOD && numberOfSegmentsInPlaylist === 1 &&
+            // we minus duration by .2 because buffer will always be > .1s but less than <.2s behind
+            // duration before playback starts.
+            (bufferLength >= lowBufferLength || bufferLength >= (_playlistDuration - .2)) ||
+              !(_seekingOutsideBuffer && _hls.isAltAudio && bufferLength <= minBufferLength);
         }
 
         public function stop() : void {
